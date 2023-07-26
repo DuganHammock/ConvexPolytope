@@ -53,1013 +53,13 @@ BeginPackage["DuganHammock`ConvexPolytope`"];
 
 		ConvexPolytope::nokey = "\"`1`\" is not a valid key for data objects of type ConvexPolytope[\[Ellipsis]].";
 
+
 	Begin["`Private`"];
 
-	(* Boole *)
-		(* utility functions for boolean operations on binary arrays *)
-		(* Boole => Boolean *)
-			Boolean[b_] := Positive[b]
-		(* Boole | Logic *)
-			(* Boole | Logic | Not *)
-				BooleNot[b_] := Subtract[1,b]
-			(* Boole | Logic | Compare *)
-				BooleAnd[x_,y__] := BitAnd[x,y]
-				BooleNand[x_,y__] := BooleNot[BooleAnd[x,y]]
-				BooleNor[x_,y__] := BooleNot[BooleOr[x,y]]
-				BooleOr[x_,y__] := BitOr[x,y]
-				BooleXor[x_,y__] := BitXor[x,y]
-			(* Boole | Logic | Test *)
-				AllBoole[b__] := Equal[1,Min[b]]
-				AnyBoole[b__] := Equal[1,Max[b]]
-				NoneBoole[b__] := Equal[0,Max[b]]
-		(* Boole | Sign *)
-			BoolePositive[x_] := Ramp[Sign[x]]
-			BooleNonPositive[x_] := UnitStep[Minus[x]]
-			BooleEqualToZero[x_] := BooleNot[BooleUnequalToZero[x]]
-			BooleUnequalToZero[x_] := Unitize[x]
-			BooleNegative[x_] := BooleNot[BooleNonNegative[x]]
-			BooleNonNegative[x_] := UnitStep[x]
-		(* Boole | Compare *)
-			BooleEqual[x_,y_] := BooleEqualToZero[Subtract[x,y]]
-			BooleGreater[x_,y_] := BoolePositive[Subtract[x,y]]
-			BooleGreaterEqual[x_,y_] := BooleNonNegative[Subtract[x,y]]
-			BooleLess[x_,y_] := BooleNegative[Subtract[x,y]]
-			BooleLessEqual[x_,y_] := BooleNonPositive[Subtract[x,y]]
-			BooleUnequal[x_,y_] := BooleUnequalToZero[Subtract[x,y]]
-			(* operators *)
-				BooleEqualTo[y_][x_] := BooleEqual[x,y]
-				BooleGreaterThan[y_][x_] := BooleGreater[x,y]
-				BooleGreaterEqualThan[y_][x_] := BooleGreaterEqual[x,y]
-				BooleLessThan[y_][x_] := BooleLess[x,y]
-				BooleLessEqualThan[y_][x_] := BooleLessEqual[x,y]
-				BooleUnequalTo[y_][x_] := BooleUnequal[x,y]
 
-	(* List *)
-		(* utility functions for lists *)
-		(* Parts *)
-			Parts[list_, i_Integer] := Part[list,i]
-			Parts[list_, {indices___Integer}] := Part[list,{indices}]
-			Parts[list_, indexLists_List] := Map[Function[Parts[list,#]], indexLists]
-			Parts[list_][indices_] := Parts[list,indices]
-		(* Indices *)
-			ListIndices[list_List] := Range[Length[list]]
-			ElementIndices[x_,element_] := Pick[ListIndices[x],x,element]
-			SublistIndices[list_,sublist_] := Subtract[Part[Take[Values[PositionIndex[Join[sublist,list]]],Length[sublist]],All,2],Length[sublist]]
-		(* IndexSubset *)
-			IndexSubsetAdjacencyMatrix[indexSubsets_, maxIndex_:0] := Normal[IndexSubsetAdjacencyMatrixSparse[indexSubsets, maxIndex]]
-			IndexSubsetAdjacencyMatrixSparse[indexSubsets_, maxIndex_:0] := SparseArray[Rule[Flatten[MapIndexed[Composition[Tuples,List],indexSubsets],1],1],{Max[maxIndex,indexSubsets],Length[indexSubsets]}]
-			IndexSubsetMemberships[pointIndexSubsets_] := Map[Function[pointSubsetAdj,Pick[ListIndices[pointIndexSubsets],pointSubsetAdj,1]],IndexSubsetAdjacencyMatrixSparse[pointIndexSubsets]]
-		(* Gather *)
-			GatherIndices[x_] := Values[PositionIndex[x]]
-			GatherIndicesBy[x_, f_] := Values[PositionIndex[Map[f,x]]]
-			GatherByList[x_, y_] := Parts[x,GatherIndices[y]]
-		(* Duplicates *)
-			(* Duplicates | Indices *)
-				DuplicateIndexSets[x_] := Cases[PositionIndex[x],{i_,j__} :> {i,j}]
-				DuplicateIndices[x_] := Apply[Union,DuplicateIndexSets[x]]
-				FirstDuplicateIndices[x_] := Cases[PositionIndex[x],{i_,j__} :> i]
-				NonDuplicateIndices[x_] := Cases[PositionIndex[x],{i_}:>i]
-				DeleteDuplicateIndices[x_] := Part[Values[PositionIndex[x]],All,1]
-			(* Duplicates *)
-				Duplicates[x_] := Cases[Tally[x],RuleDelayed[{e_,Except[1]},e]]
-				NonDuplicates[x_] := Cases[Tally[x],RuleDelayed[{e_,1},e]]
-				FirstDuplicates[x_] := Part[x,FirstDuplicateIndices[x]]
-				DuplicateSets[x_] := Cases[Tally[x],{i_}:>i]
-				(* DeleteDuplicates *)
-		(* Set *)
-			(* Set | Empty *)
-				EmptySet[] := {}
-				EmptySetQ[x_] := Equal[0,Length[x]]
-				SetNonEmptyQ[x_] := Positive[Length[x]]
-			(* Set | Indices *)
-				IntersectionIndices[x_,y_] := SublistIndices[x,Intersection[x,y]]
-				ComplementIndices[x_,y_] := SublistIndices[x,Complement[x,y]]
-		(* Maximal *)
-			(* Maximal | Indices *)
-				MaximalIndex[x_] := First[Ordering[x,-1]]
-				MaximalIndices[x_] := Pick[ListIndices[x], x, MaximalElement[x]]
-			(* Maximal | Elements *)
-				MaximalElement[x_] := Part[x, MaximalIndex[x]]
-				MaximalElements[x_] := Part[x, MaximalIndices[x]]
-		(* Minimal *)
-			(* Minimal | Indices *)
-				MinimalIndex[x_] := First[Ordering[x,1]]
-				MinimalIndices[x_] := Pick[ListIndices[x],x,MinimalElement[x]]
-			(* Minimal | Elements *)
-				MinimalElement[x_] := Part[x,MinimalIndex[x]]
-				MinimalElements[x_] := Part[x,MinimalIndices[x]]
-		(* Sign *)
-			(* All | Sign *)
-				AllNegative[x_] := AllBoole[BooleNegative[x]]
-				AllNonNegative[x_] := AllBoole[BooleNonNegative[x]]
-				AllUnequalToZero[x_] := AllBoole[BooleUnequalToZero[x]]
-				AllPositive[x_] := AllBoole[BoolePositive[x]]
-				AllEqualToZero[x_] := AllBoole[BooleEqualToZero[x]]
-			(* Any | Sign *)
-				AnyNegative[x_] := AnyBoole[BooleNegative[x]]
-				AnyNonNegative[x_] := AnyBoole[BooleNonNegative[x]]
-				AnyUnequalToZero[x_] := AnyBoole[BooleUnequalToZero[x]]
-				AnyPositive[x_] := AnyBoole[BoolePositive[x]]
-				AnyEqualToZero[x_] := AnyBoole[BooleEqualToZero[x]]
-			(* None | Sign *)
-				NoneNegative[x_] := NoneBoole[BooleNegative[x]]
-				NoneNonNegative[x_] := NoneBoole[BooleNonNegative[x]]
-				NoneUnequalToZero[x_] := NoneBoole[BooleUnequalToZero[x]]
-				NonePositive[x_] := NoneBoole[BoolePositive[x]]
-				NoneEqualToZero[x_] := NoneBoole[BooleEqualToZero[x]]
-		(* Compare *)
-			(* for comparing numerical lists *)
-			(* List | Compare *)
-				ListEqual[x_,y_] := Boolean[BooleEqualToZero[Subtract[x,y]]]
-				ListGreater[x_,y_] := Boolean[BooleGreater[x,y]]
-				ListGreaterEqual[x_,y_] := Boolean[BooleGreaterEqual[x,y]]
-				ListLess[x_,y_] := Boolean[BooleLess[x,y]]
-				ListLessEqual[x_,y_] := Boolean[BooleLessEqual[x,y]]
-				ListUnequal[x_,y_] := Boolean[BooleUnequal[x,y]]
-				(* operators *)
-					ListEqualTo[y_][x_] := ListEqual[x,y]
-					ListGreaterThan[y_][x_] := ListGreater[x,y]
-					ListGreaterEqualThan[y_][x_] := ListGreaterEqual[x,y]
-					ListLessThan[y_][x_] := ListLess[x,y]
-					ListLessEqualThan[y_][x_] := ListLessEqual[x,y]
-					ListUnequalTo[y_][x_] := ListUnequal[x,y]
-			(* All | Compare *)
-				AllEqual[x_,y_] := AllBoole[BooleEqual[x,y]]
-				AllGreater[x_,y_] := AllBoole[BooleGreater[x,y]]
-				AllGreaterEqual[x_,y_] := AllBoole[BooleGreaterEqual[x,y]]
-				AllLess[x_,y_] := AllBoole[BooleLess[x,y]]
-				AllLessEqual[x_,y_] := AllBoole[BooleLessEqual[x,y]]
-				AllUnequal[x_,y_] := AllBoole[BooleUnequal[x,y]]
-				(* operators *)
-					AllEqualTo[y_][x_] := AllEqual[x,y]
-					AllGreaterThan[y_][x_] := AllGreater[x,y]
-					AllGreaterEqualThan[y_][x_] := AllGreaterEqual[x,y]
-					AllLessThan[y_][x_] := AllLess[x,y]
-					AllLessEqualThan[y_][x_] := AllLessEqual[x,y]
-					AllUnequalTo[y_][x_] := AllUnequal[x,y]
-			(* Any | Compare *)
-				AnyEqual[x_,y_] := AnyBoole[BooleEqual[x,y]]
-				AnyGreater[x_,y_] := AnyBoole[BooleGreater[x,y]]
-				AnyGreaterEqual[x_,y_] := AnyBoole[BooleGreaterEqual[x,y]]
-				AnyLess[x_,y_] := AnyBoole[BooleLess[x,y]]
-				AnyLessEqual[x_,y_] := AnyBoole[BooleLessEqual[x,y]]
-				AnyUnequal[x_,y_] := AnyBoole[BooleUnequal[x,y]]
-				(* operators *)
-					AnyEqualTo[y_][x_] := AnyEqual[x,y]
-					AnyGreaterThan[y_][x_] := AnyGreater[x,y]
-					AnyGreaterEqualThan[y_][x_] := AnyGreaterEqual[x,y]
-					AnyLessThan[y_][x_] := AnyLess[x,y]
-					AnyLessEqualThan[y_][x_] := AnyLessEqual[x,y]
-					AnyUnequalTo[y_][x_] := AnyUnequal[x,y]
-			(* None | Compare *)
-				NoneEqual[x_,y_] := NoneBoole[BooleEqual[x,y]]
-				NoneGreater[x_,y_] := NoneBoole[BooleGreater[x,y]]
-				NoneGreaterEqual[x_,y_] := NoneBoole[BooleGreaterEqual[x,y]]
-				NoneLess[x_,y_] := NoneBoole[BooleLess[x,y]]
-				NoneLessEqual[x_,y_] := NoneBoole[BooleLessEqual[x,y]]
-				NoneUnequal[x_,y_] := NoneBoole[BooleUnequal[x,y]]
-				(* operators *)
-					NoneEqualTo[y_][x_] := NoneEqual[x,y]
-					NoneGreaterThan[y_][x_] := NoneGreater[x,y]
-					NoneGreaterEqualThan[y_][x_] := NoneGreaterEqual[x,y]
-					NoneLessThan[y_][x_] := NoneLess[x,y]
-					NoneLessEqualThan[y_][x_] := NoneLessEqual[x,y]
-					NoneUnequalTo[y_][x_] := NoneUnequal[x,y]
+(* ::Subsection:: *)
+(*ConvexPolytope*)
 
-
-
-	(* Numeric *)
-		(* N | Precision *)
-			$NTolerance = 10.^-10;
-		(* N | Chop *)
-			NChop[{}] := {}
-			NChop[x_?ArrayQ] := Threshold[x,{"Hard",$NTolerance}]
-			NChop[x_List] := Map[NChop,x]
-			NChop[x_] := N[Chop[x,$NTolerance]]
-		(* N | Pick *)
-			NPick[list_, sel_, pattern_] := Pick[list, NRound[sel], NRound[pattern]]
-		(* N | Round *)
-			NRound[x_] := Round[x,$NTolerance]
-		(* Unit *)
-			NonUnitize[x_] := Subtract[1,Unitize[x]]
-			UnitDelta[x_] := NonUnitize[x]
-			InvertUnits[x_] := With[{xUnital = Unitize[x]},Times[Power[Plus[x,Subtract[1,xUnital]],-1],xUnital]]
-		(* N | Unit *)
-			NUnitize[x_] := Unitize[NChop[x]]
-			NNonUnitize[x_] := Subtract[1,NUnitize[x]]
-			NUnitDelta[x_] := NNonUnitize[x]
-			NUnitStep[x_] := UnitStep[Plus[x,$NTolerance]]
-			NInvertUnits[x_] := With[{xNUnital = NUnitize[x]},Times[Power[Plus[x,Subtract[1,xNUnital]],-1],xNUnital]]
-		(* N | Boole *)
-			(* N | Boole | Sign *)
-				BooleNEqualToZero[x_] := NUnitDelta[x]
-				BooleNNegative[x_] := UnitStep[Subtract[Minus[$NTolerance],x]]
-				BooleNNonNegative[x_] := UnitStep[Plus[x,$NTolerance]]
-				BooleNNonPositive[x_] := UnitStep[Subtract[$NTolerance,x]]
-				BooleNPositive[x_] := UnitStep[Plus[x,Minus[$NTolerance]]]
-				BooleNUnequalToZero[x_] := NUnitize[x]
-			(* N | Boole | Compare *)
-				BooleNEqual[x_,y_] := BooleNEqualToZero[Subtract[x,y]]
-				BooleNGreater[x_,y_] := BooleNPositive[Subtract[x,y]]
-				BooleNGreaterEqual[x_,y_] := BooleNNonNegative[Subtract[x,y]]
-				BooleNLess[x_,y_] := BooleNNegative[Subtract[x,y]]
-				BooleNLessEqual[x_,y_] := BooleNNonPositive[Subtract[x,y]]
-				BooleNUnequal[x_,y_] := BooleNEqualToZero[Subtract[x,y]]
-		(* N | Gather *)
-			NGather[x_] := GatherByList[x,NRound[x]]
-			NGatherByList[x_,y_] := GatherByList[x,NRound[y]]
-			NGatherIndices[x_] := GatherIndices[NRound[x]]
-		(* N | Duplicates *)
-			(* N | Duplicates | Indices *)
-				NDeleteDuplicateIndices[x_] := DeleteDuplicateIndices[NRound[x]]
-				NDuplicateIndexSets[x_] := DuplicateIndexSets[NRound[x]]
-				NDuplicateIndices[x_] := DuplicateIndices[NRound[x]]
-				NFirstDuplicateIndices[x_] := FirstDuplicateIndices[NRound[x]]
-				NNonDuplicateIndices[x_] := NonDuplicateIndices[NRound[x]]
-			(* N | Duplicates *)
-				NDeleteDuplicates[x_] := Part[x,NDeleteDuplicateIndices[x]]
-				NDuplicates[x_] := Part[x,NDuplicateIndices[x]]
-				NDuplicateSets[x_] := Part[x,NDuplicateIndexSets[x]]
-				NFirstDuplicates[x_] := Part[x,NFirstDuplicateIndices[x]]
-				NNonDuplicates[x_] := Part[x,NNonDuplicateIndices[x]]
-			(* N | Union *)
-				NUnion[x_] := NumericalSort[NDeleteDuplicates[x]]
-		(* N | Set *)
-			(* N | Complement *)
-				NComplementIndices[x_,y_] := ComplementIndices[NRound[x],NRound[y]]
-				NComplement[x_,y_] := Part[x,NComplementIndices[x,y]]
-				NComplement[x_,y_,z__] := NComplement[NComplement[x,y],z]
-				NMemberQ[list_, form_] := MemberQ[NRound[list],NRound[form]]
-			(* N | Intersection *)
-				NIntersectionIndices[x_,y_] := IntersectionIndices[NRound[x],NRound[y]]
-				NIntersection[x_,y_] := Part[x,NIntersectionIndices[x,y]]
-				NIntersection[x_,y_,z__] := NIntersection[NIntersection[x,y],z]
-		(* N | Maximal *)
-			NMaximalElement[x_] := NRound[Max[x]]
-			NMaximalElements[x_] := Part[x,MaximalIndices[x]]
-			NMaximalIndex[x_] := First[Ordering[x,-1]]
-			NMaximalIndices[x_] := Pick[ListIndices[x], x, MaximalElement[x]]
-		(* N | Minimal *)
-			NMinimalElement[x_] := Part[x,MinimalIndex[x]]
-			NMinimalElements[x_] := Part[x,MinimalIndices[x]]
-			NMinimalIndex[x_] := First[Ordering[x,-1]]
-			NMinimalIndices[x_] := Pick[ListIndices[x],x,MinimalElement[x]]
-		(* N | Sign *)
-			(* N | Sign *)
-				NSign[x_] := Sign[NChop[x]]
-			(* N | Sign | Test *)
-				NPositive[x_] := Boolean[BooleNPositive[x]]
-				NNonPositive[x_] := Boolean[BooleNNonPositive[x]]
-				NEqualToZero[x_] := Boolean[BooleNUnequalToZero[x]]
-				NUnequalToZero[x_] := Boolean[BooleNUnequalToZero[x]]
-				NNegative[x_] := Boolean[BooleNNegative[x]]
-				NNonNegative[x_] := Boolean[BooleNNonNegative[x]]
-			(* N | All | Sign *)
-				AllNEqualToZero[x_]  := AllBoole[BooleNEqualToZero[x]]
-				AllNNegative[x_]  := AllBoole[BooleNNegative[x]]
-				AllNNonNegative[x_]  := AllBoole[BooleNNonNegative[x]]
-				AllNPositive[x_]  := AllBoole[BooleNPositive[x]]
-				AllNNonPositive[x_]  := AllBoole[BooleNonPositive[x]]
-				AllNUnequalToZero[x_]  := AllBoole[BooleNUnequalToZero[x]]
-			(* N | Any | Sign *)
-				AnyNEqualToZero[x_] := AnyBoole[BooleNEqualToZero[x]]
-				AnyNNegative[x_] := AnyBoole[BooleNNegative[x]]
-				AnyNNonNegative[x_] := AnyBoole[BooleNNonNegative[x]]
-				AnyNPositive[x_] := AnyBoole[BooleNPositive[x]]
-				AnyNNonPositive[x_]  := AnyBoole[BooleNNonPositive[x]]
-				AnyNUnequalToZero[x_] := AnyBoole[BooleNUnequalToZero[x]]
-			(* N | None | Sign *)
-				NoneNEqualToZero[x_] := NoneBoole[NEqualToZero[x]]
-				NoneNNegative[x_] := NoneBoole[NNegative[x]]
-				NoneNNonNegative[x_] := NoneBoole[NNonNegative[x]]
-				NoneNPositive[x_] := NoneBoole[NPositive[x]]
-				NoneNNonPositive[x_] := NoneBoole[NNonPositive[x]]
-				NoneNUnequalToZero[x_] := NoneBoole[NUnequalToZero[x]]
-		(* N | Compare *)
-			NEqual[x_,y_] := AllNEqual[x,y]
-			NGreater[x_,y_] := AllNGreater[x,y]
-			NGreaterEqual[x_,y_] := AllNGreaterEqual[x,y]
-			NLess[x_,y_] := AllNLess[x,y]
-			NLessEqual[x_,y_] := AllNLessEqual[x,y]
-			NUnequal[x_,y_] := AllNUnequal[x,y]
-			(* N | Compare | Operators *)
-				NEqualTo[y_][x_] := NEqual[x,y]
-				NGreaterThan[y_][x_] := NGreater[x,y]
-				NGreaterEqualThan[y_][x_] := NGreaterEqual[x,y]
-				NLessThan[y_][x_] := NLess[x,y]
-				NLessEqualThan[y_][x_] := NLessEqual[x,y]
-				NUnequalTo[y_][x_] := NUnequal[x,y]
-			(* N | List | Compare *)
-				ListNEqual[x_,y_] := Boolean[BooleNEqual[x,y]]
-				ListNGreater[x_,y_] := Boolean[BooleNGreater[x,y]]
-				ListNGreaterEqual[x_,y_] := Boolean[BooleNGreaterEqual[x,y]]
-				ListNLess[x_,y_] := Boolean[BooleNLess[x,y]]
-				ListNLessEqual[x_,y_] := Boolean[BooleNLessEqual[x,y]]
-				ListNUnequal[x_,y_] := Boolean[BooleNUnequal[x,y]]
-				(* operators *)
-					ListNEqualTo[y_][x_] := ListNEqual[x,y]
-					ListNGreaterThan[y_][x_] := ListNGreater[x,y]
-					ListNGreaterEqualThan[y_][x_] := ListNGreaterEqual[x,y]
-					ListNLessThan[y_][x_] := ListNLess[x,y]
-					ListNLessEqualThan[y_][x_] := ListNLessEqual[x,y]
-					ListNUnequalTo[y_][x_] := ListNUnequal[x,y]
-			(* N | All | Compare *)
-				AllNEqual[x_,y_] := AllBoole[BooleNEqual[x,y]]
-				AllNGreater[x_,y_] := AllBoole[BooleNGreater[x,y]]
-				AllNGreaterEqual[x_,y_] := AllBoole[BooleNGreaterEqual[x,y]]
-				AllNLess[x_,y_] := AllBoole[BooleNLess[x,y]]
-				AllNLessEqual[x_,y_] := AllBoole[BooleNLessEqual[x,y]]
-				AllNUnequal[x_,y_] := AllBoole[BooleNUnequal[x,y]]
-				(* operators *)
-					AllNEqualTo[y_][x_] := AllNEqual[x,y]
-					AllNGreaterThan[y_][x_] := AllNGreater[x,y]
-					AllNGreaterEqualThan[y_][x_] := AllNGreaterEqual[x,y]
-					AllNLessThan[y_][x_] := AllNLess[x,y]
-					AllNLessEqualThan[y_][x_] := AllNLessEqual[x,y]
-					AllNUnequalTo[y_][x_] := AllNUnequal[x,y]
-			(* N | Any | Compare *)
-				AnyNEqual[x_,y_] := AnyBoole[BooleNEqual[x,y]]
-				AnyNGreater[x_,y_] := AnyBoole[BooleNGreater[x,y]]
-				AnyNGreaterEqual[x_,y_] := AnyBoole[BooleNGreaterEqual[x,y]]
-				AnyNLess[x_,y_] := AnyBoole[BooleNLess[x,y]]
-				AnyNLessEqual[x_,y_] := AnyBoole[BooleNLessEqual[x,y]]
-				AnyNUnequal[x_,y_] := AnyBoole[BooleNUnequal[x,y]]
-				(* operators *)
-					AnyNEqualTo[y_][x_] := AnyNEqual[x,y]
-					AnyNGreaterThan[y_][x_] := AnyNGreater[x,y]
-					AnyNGreaterEqualThan[y_][x_] := AnyNGreaterEqual[x,y]
-					AnyNLessThan[y_][x_] := AnyNLess[x,y]
-					AnyNLessEqualThan[y_][x_] := AnyNLessEqual[x,y]
-					AnyNUnequalTo[y_][x_] := AnyNUnequal[x,y]
-			(* N | None | Compare *)
-				NoneNEqual[x_,y_] := NoneBoole[BooleNEqual[x,y]]
-				NoneNGreater[x_,y_] := NoneBoole[BooleNGreater[x,y]]
-				NoneNGreaterEqual[x_,y_] := NoneBoole[BooleNGreaterEqual[x,y]]
-				NoneNLess[x_,y_] := NoneBoole[BooleNLess[x,y]]
-				NoneNLessEqual[x_,y_] := NoneBoole[BooleNLessEqual[x,y]]
-				NoneNUnequal[x_,y_] := NoneBoole[BooleNUnequal[x,y]]
-				(* operators *)
-					NoneNEqualTo[y_][x_] := NoneNEqual[x,y]
-					NoneNGreaterThan[y_][x_] := NoneNGreater[x,y]
-					NoneNGreaterEqualThan[y_][x_] := NoneNGreaterEqual[x,y]
-					NoneNLessThan[y_][x_] := NoneNLess[x,y]
-					NoneNLessEqualThan[y_][x_] := NoneNLessEqual[x,y]
-					NoneNUnequalTo[y_][x_] := NoneNUnequal[x,y]
-
-	(* Vector *)
-		(* Array *)
-			(* Array | Transpose *)
-				ArrayTranspose[array_?ArrayQ] := Transpose[array,TwoWayRule[1,ArrayDepth[array]]]
-
-			(* Array | Dot *)
-				ArrayDot[___,{},___] := {}
-				ArrayDot[a_?ArrayQ,b_?ArrayQ] := Dot[a,b]
-				ArrayDot[A_?ListQ,b_?ArrayQ] := Map[Function[ArrayDot[#,b]],A]
-				ArrayDot[a_?ArrayQ,B_?ListQ] := Map[Function[ArrayDot[a,#]],B]
-				ArrayDot[a_,b_,c__] := ArrayDot[ArrayDot[a,b],c]
-
-		(* Vector *)
-			(* Vector | Construct *)
-				OriginVector[n_Integer] := ConstantArray[0,n]
-				DiagonalVector[n_] := ConstantArray[1,n]
-
-			(* Vector | Query *)
-				OriginVectorQ[vectors_] := ListNEqual[VectorNorm[vectors],0]
-				UnitVectorQ[vectors_] := ListNEqual[VectorNorm[vectors],1]
-
-		(* Dimension *)
-			(* Dimension| Embedding *)
-				EmbeddingDimension[vertices_] := If[ArrayQ[vertices],Last[Dimensions[vertices]],EmbeddingDimension[First[vertices]]]
-					(* alias *)
-					VectorDimension[vertices_] := EmbeddingDimension[vertices]
-
-			(* Dimension | VectorSpan *)
-				VectorSpanDimension[{}] := -1
-				VectorSpanDimension[vectors_List] := MatrixRank[N[vectors]]
-					(* alias *)
-					VectorSpaceDimension[vectors_] := VectorSpanDimension[vectors]
-
-			(* Dimension | AffineSpan *)
-				AffineSpanDimension[ {} | {{}} ] := -1
-				AffineSpanDimension[points_] := VectorSpanDimension[VectorTranslate[points,N[Minus[First[points]]]]]
-					(* alias *)
-					AffineSpaceDimension[points_] := AffineSpanDimension[points]
-
-			(* Vector | Properties *)
-				VectorCoordinateSum[vectors_] := ArrayDot[vectors,DiagonalVector[EmbeddingDimension[vectors]]]
-				VectorArg[points_] := Arg[ArrayDot[VectorProject[points,2],{1,I}]]
-
-			(* Vector | Norm *)
-				VectorNormSquared[vectors_] := VectorCoordinateSum[Power[Abs[vectors],2]]
-				VectorNorm[vectors_] := Sqrt[VectorNormSquared[vectors]]
-				VectorNormalize[vectors_List] := Times[vectors,NInvertUnits[VectorNorm[vectors]]]
-
-		(* Matrix *)
-			(* Matrix | Query *)
-				VectorIndependentQ[vectors_] := Equal[VectorSpanDimension[vectors],Length[vectors]]
-				MatrixRankFullQ[vectors_] := VectorIndependentQ[vectors]
-
-				(* alias *)
-				VectorDepenentQ[vectors_] := Not[VectorIndependentQ[vectors]]
-				MatrixRankMaximalQ[vectors_] := Equal[VectorSpanDimension[vectors],EmbeddingDimension[vectors]]
-				MatrixRankNullQ[vectors_] := Equal[0,VectorSpanDimension[vectors]]
-				MatrixInvertibleQ[matrix_] := And[SquareMatrixQ[matrix],NUnequalToZero[Det[N[matrix]]]]
-					MatrixGeneralLinearQ[matrix_] := MatrixInvertibleQ[matrix]
-				MatrixSpecialLinearQ[matrix_] := And[MatrixGeneralLinearQ[matrix],NEqual[Det[matrix],1]]
-				NOrthogonalize[matrix_] := If[OrthogonalMatrixQ[N[matrix]], matrix, NChop[Orthogonalize[matrix]]]
-
-			(* Matrix | Standardize *)
-				MatrixSpecialize[matrix_] := MatrixNormalizeDeterminant[VectorOrient[matrix]]
-				MatrixNormalizeDeterminant[matrix_] := If[MatrixGeneralLinearQ[matrix], Times[matrix,Power[Abs[Det[matrix]],Minus[Length[matrix]]]], matrix]
-
-			(* Matrix | Random | Orthogonal *)
-				RandomOrthogonalMatrix[embeddingDimension_Integer] := Orthogonalize[RandomReal[{-1,1},{embeddingDimension,embeddingDimension}]]
-				RandomOrthogonalMatrix[embeddingDimension_Integer, subspaceDimension_Integer] := Orthogonalize[RandomReal[{-1,1},{subspaceDimension,embeddingDimension}]]
-				RandomOrthogonalMatrix[{subspaceDimension_Integer, embeddingDimension_Integer}] := Orthogonalize[RandomReal[{-1,1},{subspaceDimension,embeddingDimension}]]
-
-			(* Matrix | Random | SpecialOrthogonal *)
-				RandomSpecialOrthogonalMatrix[dimension_Integer] := MatrixSpecialize[RandomOrthogonalMatrix[dimension]]
-
-			(* Matrix | Random | Reflection *)
-				RandomReflectionMatrix[dimension_] := ReflectionMatrix[RandomReal[{-1,1},{dimension}]]
-
-		(* Vector | Space *)
-			(* Vector | SpanningSet | Indices *)
-				VectorSpanningSetIndices[{}] := {}
-				VectorSpanningSetIndices[vectors_?MatrixQ, maxDimension_:Infinity] :=
-					Module[{
-							vectorsN,
-							embeddingDimension,
-							remainingVectorBooles,
-							remainingVectors,
-							remainingVectorIndices,
-							spanningVectorIndices,
-							spanningVectorIndex,
-							spanningVector
-						},
-						embeddingDimension = EmbeddingDimension[vectors];
-						vectorsN = N[vectors];
-						remainingVectors = vectorsN;
-						remainingVectorIndices = ListIndices[vectorsN];
-						spanningVectorIndices = {};
-						Do[
-							remainingVectorBooles = BooleNPositive[VectorNorm[remainingVectors]];
-							If[NoneBoole[remainingVectorBooles],Break[];];
-							remainingVectorIndices = Pick[remainingVectorIndices, remainingVectorBooles, 1];
-							remainingVectors = Pick[remainingVectors, remainingVectorBooles, 1];
-
-							spanningVectorIndex = First[remainingVectorIndices];
-							spanningVector = First[remainingVectors];
-							AppendTo[spanningVectorIndices,spanningVectorIndex];
-							If[EmptySetQ[remainingVectorIndices],Break[];];
-							remainingVectorIndices = Rest[remainingVectorIndices];
-							remainingVectors = Rest[remainingVectors];
-							remainingVectors = VectorProject[remainingVectors,NullSpace[{spanningVector}]] // Chop;
-
-						,{Min[Length[vectors],maxDimension,embeddingDimension]}];
-						Return[spanningVectorIndices];
-					]
-			(* Vector | SpanningSet *)
-				VectorSpanningSet[vectors_, maxDimension_:Infinity] := Part[vectors,VectorSpanningSetIndices[vectors,maxDimension]]
-		(* Basis *)
-			(* Basis | Orientation *)
-				VectorOrientedQ[basis_] := If[SquareMatrixQ[basis],Positive[Chop[Det[N[basis]]]],True]
-				VectorOrient[basis_] := If[Not[VectorOrientedQ[basis]],ReverseBasisOrientation[basis],basis]
-			(* Basis | Orientation | Reverse *)
-				ReverseBasisOrientation[ {} | {{}} ] := {}
-				ReverseBasisOrientation[{v1_}] := {Minus[v1]}
-				ReverseBasisOrientation[{v1_,v2_,v3___}] := {v2,v1,v3}
-		(* Vector | Span *)
-			(* Empty | Span *)
-				EmptySpace[] := EmptySpace[<|"EmbeddingDimension"->Minus[1]|>]
-				EmptySpace[n_Integer] := EmptySpace[<|"EmbeddingDimension"->n|>]
-				EmptySpace[data_Association]["Dimension"] := Minus[1]
-				EmptySpace[data_Association]["EmbeddingDimension"] := data["EmbeddingDimension"]
-			(* Vector | Space | Construct *)
-				VectorSpan[n_Integer] := VectorSpan[IdentityMatrix[n]]
-				VectorSpan[n_Integer, k_Integer] := VectorSpan[IdentityMatrix[{k,n}]]
-				VectorSpan[{} | {{}}] := EmptySpace[]
-				VectorSpan[vector_?VectorQ] := VectorSpan[{vector}]
-				VectorSpan[vectors_?MatrixQ] :=
-					Module[{
-							embeddingDimension,
-							dimension,
-							spanningVectors,
-							basis
-						},
-						embeddingDimension = EmbeddingDimension[vectors];
-						spanningVectors = VectorSpanningSet[vectors];
-						dimension = Length[spanningVectors];
-						basis = NOrthogonalize[spanningVectors];
-						nullSpaceBasis = If[Positive[dimension], NOrthogonalize[NullSpace[basis]], IdentityMatrix[embeddingDimension]];
-						VectorSpan[
-							<|
-								"Dimension" -> dimension,
-								"EmbeddingDimension" -> embeddingDimension,
-								"Basis" -> basis,
-								"NullSpace" -> nullSpaceBasis
-							|>
-						]
-					]
-			(* Vector | Span | Attributes *)
-				VectorSpan[data_Association]["Dimension"|"dimension"|"Dim"|"dim"|"D"|"d"] := data["Dimension"]
-				VectorSpan[data_Association]["EmbeddingDimension"|"embdim"|"edim"|"EDim"|"ed"|"e"] := data["EmbeddingDimension"]
-				VectorSpan[data_Association]["Basis"|"basis"|"B"|"b"] := data["Basis"]
-				VectorSpan[data_Association]["NullSpace"|"nullspace"|"NullBasis"|"nullbasis"|"N"|"n"] := data["NullSpace"]
-			(* Vector | Span | Properties *)
-				VectorSpan[data_Association]["Codimension"|"Codim"|"codim"|"cdim"|"cd"|"c"] := Subtract[data["EmbeddingDimension"],data["Dimension"]]
-				VectorSpan[data_Association]["Origin"|"origin"|"O"|"o"] := OriginVector[data["EmbeddingDimension"]]
-			(* Vector | Intersection *)
-				VectorSpanIntersection[___, emptySpace_EmptySpace, ___] := emptySpace
-				VectorSpanIntersection[a_, b_, c__] := VectorSpanIntersection[VectorSpanIntersection[a,b],c]
-				VectorSpanIntersection[a_AffineSpan, b_AffineSpan] := VectorSpanIntersection[VectorSpan[a],VectorSpan[b]]
-				VectorSpanIntersection[a_AffineSpan, b_VectorSpan] := VectorSpanIntersection[VectorSpan[a],b]
-				VectorSpanIntersection[a_VectorSpan, b_AffineSpan] := VectorSpanIntersection[a,VectorSpan[b]]
-				VectorSpanIntersection[a_VectorSpan, b_VectorSpan] :=
-					Module[{
-							embeddingDimension,
-							dimension,
-							basis1,
-							basis2,
-							basis,
-							nullSpaceBasis
-						},
-						If[Unequal[a["EmbeddingDimension"],b["EmbeddingDimension"]],Return[EmptySpace[]];];
-						If[Or[a["Dimension"]==0,b["Dimension"]==0],Return[VectorSpan[embeddingDimension,0]];];
-						embeddingDimension = a["EmbeddingDimension"];
-
-						If[And[a["Dimension"]==embeddingDimension,b["Dimension"]==embeddingDimension],Return[VectorSpan[embeddingDimension,embeddingDimension]];];
-						If[And[a["Dimension"]==embeddingDimension],Return[b];];
-						If[And[b["Dimension"]==embeddingDimension],Return[a];];
-						basis = NOrthogonalize[NullSpace[Join[a["NullSpace"],b["NullSpace"]]]];
-						nullSpaceBasis = If[basis=={},
-							IdentityMatrix[embeddingDimension],
-							Orthogonalize[NullSpace[basis]]
-						];
-						dimension = Length[basis];
-						VectorSpan[
-							<|
-								"Dimension" -> dimension,
-								"EmbeddingDimension" -> embeddingDimension,
-								"Basis" -> basis,
-								"NullSpace" -> nullSpaceBasis
-							|>
-						]
-					]
-		(* Affine *)
-			(* Affine | SpanningSet *)
-				AffineSpanningSet[ {} | {{}} ] := {}
-				AffineSpanningSet[point_?VectorQ] := {point}
-				AffineSpanningSet[{point_?VectorQ}] := {point}
-				AffineSpanningSet[points_?MatrixQ] := Prepend[Part[{points},VectorSpanningSetIndices[VectorTranslate[{points},Minus[point]]]], point]
-
-			(* Affine | Span *)
-				AffineSpan[n_Integer] := AffineSpan[n,n]
-				AffineSpan[n_Integer, k_Integer] := AffineSpan[OriginVector[n],IdentityMatrix[{k,n}]]
-				AffineSpan[{} | {{}}] := EmptySpace[]
-				AffineSpan[point_?VectorQ, k_Integer] := AffineSpan[point,IdentityMatrix[{k,EmbeddingDimension[point]}]]
-				AffineSpan[point_?VectorQ] := AffineSpan[point,{}]
-				AffineSpan[{point_?VectorQ}] := AffineSpan[point,{}]
-				AffineSpan[{point_?VectorQ, points__?VectorQ}] := AffineSpan[point, VectorTranslate[{points},Minus[point]]]
-
-				AffineSpan[point_?VectorQ, {} | {{}} ] := AffineSpan[point,0]
-				AffineSpan[point_?VectorQ, vector_?VectorQ] := AffineSpan[point, {vector}]
-				AffineSpan[point_?VectorQ, vectors_?MatrixQ] :=
-					Module[{
-							embeddingDimension,
-							spanningVectors,
-							affineDimension,
-							affineBasis,
-							nullSpaceBasis,
-							affineOrigin
-						},
-						embeddingDimension = EmbeddingDimension[point];
-						spanningVectors = VectorSpanningSet[vectors];
-						affineDimension = Length[spanningVectors];
-						affineOrigin = point;
-						affineBasis = spanningVectors // NOrthogonalize;
-						nullSpaceBasis = NullSpace[Prepend[affineBasis,OriginVector[embeddingDimension]]] // NOrthogonalize;
-						AffineSpan[
-							<|
-								"Dimension" -> affineDimension,
-								"EmbeddingDimension" -> embeddingDimension,
-								"Basis" -> affineBasis,
-								"NullSpace" -> nullSpaceBasis,
-								"Origin" -> affineOrigin
-							|>
-						]
-					]
-			(* AffineSpan | Attributes *)
-				AffineSpan[data_Association]["Dimension"|"dimension"|"Dim"|"dim"|"D"|"d"] := data["Dimension"]
-				AffineSpan[data_Association]["EmbeddingDimension"|"embdim"|"edim"|"EDim"|"ed"|"e"] := data["EmbeddingDimension"]
-				AffineSpan[data_Association]["Basis"|"basis"|"B"|"b"] := data["Basis"]
-				AffineSpan[data_Association]["NullSpace"|"nullspace"|"NullBasis"|"nullbasis"|"N"|"n"] := data["NullSpace"]
-				AffineSpan[data_Association]["Origin"|"origin"|"O"|"o"] := data["Origin"]
-			(* AffineSpan | Properties *)
-				AffineSpan[data_Association]["Codimension"|"Codim"|"codim"|"cdim"|"cd"|"c"] := Subtract[data["EmbeddingDimension"],data["Dimension"]]
-			(* ->> EmptySpace *)
-				EmptySpace[AffineSpan[data_Association]] := EmptySpace[data["EmbeddingDimension"]]
-				EmptySpace[VectorSpan[data_Association]] := EmptySpace[data["EmbeddingDimension"]]
-				VectorSpan[EmptySpace[data_Association]] := EmptySpace[data["EmbeddingDimension"]]
-				AffineSpan[EmptySpace[data_Association]] := EmptySpace[data["EmbeddingDimension"]]
-			(* ->> AffineSpan *)
-				AffineSpan[VectorSpan[data_Association]] := AffineSpan[Append[data,"Origin"->OriginVector[data["EmbeddingDimension"]]]]
-			(* ->> VectorSpan *)
-				VectorSpan[AffineSpan[data_Association]] := VectorSpan[Delete[data,"Origin"]]
-			(* ->> AffineSpace ->> Graphics(3D) *)
-				AffineSpan /: AffineSpace[AffineSpan[data_Association]] := AffineSpace[data["Origin"],data["Basis"]]
-				VectorSpan /: AffineSpace[VectorSpan[data_Association]] := AffineSpace[OriginVector[data["EmbeddingDimension"]],data["Basis"]]
-				EmptySpace /: AffineSpace[EmptySpace[data_Association]] := EmptyRegion[data["EmbeddingDimension"]]
-			(* AffineSpanIntersection *)
-				AffineSpanIntersection[a_,b_,c__] := AffineSpanIntersection[AffineSpanIntersection[a,b],c]
-				AffineSpanIntersection[___, EmptySpace[n_], ___] := EmptySpace[n]
-				AffineSpanIntersection[vec1_VectorSpan, vec2_VectorSpan] := AffineSpanIntersection[AffineSpan[vec1], AffineSpan[vec2]]
-				AffineSpanIntersection[vec_VectorSpan, aff_AffineSpan] := AffineSpanIntersection[aff, AffineSpan[vec]]
-				AffineSpanIntersection[aff_AffineSpan, vec_VectorSpan] := AffineSpanIntersection[aff, AffineSpan[vec]]
-				AffineSpanIntersection[aff1_AffineSpan, aff2_AffineSpan] :=
-					Module[{
-							embeddingDimension,
-							dimension1,
-							dimension2,
-							point1,
-							basis1,
-							point2,
-							basis2,
-							intersectionBasis,
-							liftedBasis1,
-							liftedBasis2,
-							liftedIntersectionBasis,
-							liftedIntersectionPoint,
-							intersectionPoint
-						},
-						If[Unequal[aff1["EmbeddingDimension"],aff2["EmbeddingDimension"]],
-							Message[VectorSpanIntersection::DimensionMismatch];
-							Return[AffineSpan[]];
-						];
-						embeddingDimension = aff1["EmbeddingDimension"];
-						dimension1 = aff1["Dimension"];
-						dimension2 = aff2["Dimension"];
-						point1 = aff1["Origin"];
-						basis1 = aff1["Basis"];
-						point2 = aff2["Origin"];
-						basis2 = aff2["Basis"];
-						zeroBasis = ConstantArray[0,{1,embeddingDimension}];
-						If[basis1 == {}, basis1 = zeroBasis;];
-						If[basis2 == {}, basis2 = zeroBasis;];
-						intersectionBasis = NOrthogonalize[NullSpace[Join[NullSpace[basis1],NullSpace[basis2],zeroBasis]]];
-						lisftedZeroBasis = ConstantArray[0,{1,Plus[embeddingDimension,1]}];
-						liftedBasis1 = ArrayFlatten[{{basis1,0},{{point1},1}}];
-						liftedBasis2 = ArrayFlatten[{{basis2,0},{{point2},1}}];
-						liftedIntersectionBasis = NullSpace[Join[NullSpace[liftedBasis1],NullSpace[liftedBasis2],lisftedZeroBasis]];
-						If[Or[liftedIntersectionBasis=={},AllNEqualToZero[Part[liftedIntersectionBasis,All,-1]]],
-							Return[EmptyRegion[embeddingDimension]];];
-						liftedIntersectionPoint = SelectFirst[liftedIntersectionBasis, Last/*Chop/*UnequalTo[0]];
-						liftedIntersectionPoint = Divide[liftedIntersectionPoint,Last[liftedIntersectionPoint]];
-						intersectionPoint = Most[liftedIntersectionPoint];
-						intersectionPoint = intersectionBasis . intersectionPoint;
-						Return[AffineSpan[intersectionPoint,intersectionBasis]];
-					]
-
-		(* Vector *)
-			(* Vector | Translate *)
-				VectorTranslate[{},vector_] := {}
-				VectorTranslate[points_,{}] := {}
-				VectorTranslate[points_?ArrayQ,vector_?VectorQ] := ArrayTranspose[Plus[ArrayTranspose[points],vector]]
-				VectorTranslate[points_?ListQ,vector_?VectorQ] := Map[Function[VectorTranslate[#,vector]],points]
-				VectorTranslate[points_?ListQ,vectors_?ListQ] := Map[Function[VectorTranslate[points,#]],vectors]
-				VectorTranslate[points_,value_?(Composition[Not,ListQ])] := Plus[points,value]
-				VectorTranslate[vectors_][points_] := VectorTranslate[points,vectors]
-
-			(* Vector | Centroid *)
-				VectorCentroid[point_?VectorQ] := point
-				VectorCentroid[points_?MatrixQ] := Mean[points]
-				VectorCentroid[points_List] := Map[VectorCentroid,points]
-
-			(* Vector | Recenter *)
-				VectorRecenter[point_?VectorQ] := point
-				VectorRecenter[points_?MatrixQ] := VectorTranslate[points,Minus[Mean[points]]]
-				VectorRecenter[points_List] := Map[VectorRecenter,points]
-
-			(* Vector | Dilate *)
-				VectorDilate[points_, scale_, pivot_] := VectorTranslate[Times[VectorTranslate[points,Minus[pivot]],scale],Plus[pivot]]
-				VectorDilate[points_?MatrixQ, scale_] := VectorDilate[points,scale,Mean[points]]
-				VectorDilate[points_List, scale_] := Map[Function[VectorDilate[#,scale]],points]
-				VectorDilate[scale_, pivot_?VectorQ][points_] := VectorDilate[points,scale,pivot]
-				VectorDilate[scale_][points_] := VectorDilate[points,scale]
-
-			(* Vector | Sort *)
-				VectorSort[vector_?VectorQ] := vector
-				VectorSort[vectors_?MatrixQ] := NumericalSort[vectors]
-				VectorSort[vectors_List] := NumericalSort[Map[VectorSort,vectors]]
-
-			(* Vector | BoundedQ *)
-				VectorBoundedQ[points_, normals_, bounds_] := Boolean[VectorBoundedQBoole[points,normals,bounds]]
-				VectorBoundedQ[normals_, bounds_][points_] := VectorBoundedQ[points,normals,bounds]
-
-			(* Vector | BoundedQ | Boole*)
-				VectorBoundedQBoole[points_, normal_?VectorQ, bound_] := BooleNNonPositive[Subtract[ArrayDot[points,normal],bound]]
-				VectorBoundedQBoole[points_, normals_?MatrixQ, bounds_] := 	BooleEqual[ArrayDot[BooleNNonPositive[VectorTranslate[ArrayDot[points,Transpose[normals]],-bounds]],DiagonalVector[Length[normals]]],Length[normals]]
-				VectorBoundedQBoole[normals_, bounds_][points_] := VectorBoundedQBoole[points,normals,bounds]
-
-			(* Vector | Match *)
-				VectorMatchQ[pointsA_,pointsB_] := NEqual[VectorSort[pointsA],VectorSort[pointsB]]
-
-			(* Vector | Cases *)
-				VectorCases[points_?MatrixQ, pattern_?MatrixQ] :=
-					Module[{
-							patternPoints,
-							patternVectors,
-							patternVectorIndex,
-							patternOffsetVector,
-							patternVector,
-							matchedPatternBasePoints
-						},
-						patternPoints = DeleteDuplicates[pattern];
-						patternBasePoint = First[patternPoints];
-						patternVectors = VectorTranslate[Rest[patternPoints],Minus[patternBasePoint]];
-						matchedPatternBasePoints = points;
-						Monitor[
-							Do[
-								patternVector = Part[patternVectors,patternVectorIndex];
-								matchedPatternBasePoints = Intersection[matchedPatternBasePoints,VectorTranslate[points,Minus[patternVector]]];
-							,{patternVectorIndex,Length[patternVectors]}];
-						,ProgressIndicator[patternVectorIndex,{1,Length[patternVectors]}]
-						,1
-						];
-						matchedPatternBasePoints = VectorTranslate[matchedPatternBasePoints,Minus[patternBasePoint]];
-						Return[matchedPatternBasePoints];
-					]
-
-			(* N | Vector | Cases *)
-				NVectorCases[points_?MatrixQ, pattern_?MatrixQ] :=
-					Module[{
-							pointsN,
-							patternPoints,
-							patternVectors,
-							patternVectorIndex,
-							patternOffsetVector,
-							patternVector,
-							matchedPatternBasePointsN,
-							matchedPatternBasePoints
-						},
-						pointsN = N[points];
-						patternPoints = NDeleteDuplicates[pattern];
-						patternBasePoint = First[patternPoints];
-						patternVectors = VectorTranslate[Rest[patternPoints],Minus[patternBasePoint]];
-						matchedPatternBasePointsN = NRound[pointsN];
-						Monitor[
-							Do[
-								patternVector = Part[patternVectors,patternVectorIndex];
-								matchedPatternBasePointsN = Intersection[matchedPatternBasePointsN,NRound[VectorTranslate[pointsN,Minus[patternVector]]]];
-							,{patternVectorIndex,Length[patternVectors]}];
-						,ProgressIndicator[patternVectorIndex,{1,Length[patternVectors]}]
-						,1
-						];
-						matchedPatternBasePoints = NIntersection[points,matchedPatternBasePointsN];
-						matchedPatternBasePoints = VectorTranslate[matchedPatternBasePoints,Minus[patternBasePoint]];
-						Return[matchedPatternBasePoints];
-					]
-
-
-			(* Vector | Shells *)
-				VectorShells[points_] := SortBy[Parts[points,GatherIndices[NRound[VectorNorm[N[points]]]]],Composition[Norm,N,First]]
-
-			(* Vector | Slice | Points *)
-				VectorSlicePoints[{},normal_,value_] := {}
-				VectorSlicePoints[points_,normal_,value_] := Pick[points, BooleNEqual[ArrayDot[N[points],N[normal]],N[value]], 1]
-				VectorSlicePoints[normal_,value_][points_] := VectorSlicePoints[points,normal,value]
-
-			(* Vector | Slice | Points | Maximal *)
-				VectorMaximalByNormal[points_,normal_] := Part[points,NMaximalIndices[Dot[N[points],normal]]]
-
-			(* Vector | Chop | Points *)
-				VectorChopPoints[{},normal_,value_] := {}
-				VectorChopPoints[points_?ArrayQ,normal_,value_] := Pick[points,NonPositive[Sign[Chop[Subtract[Dot[points,normal],value]]]]]
-				VectorChopPoints[points_,normal_,value_] := Map[Function[VectorChopPoints[#,normal,value]],points]
-				VectorChopPoints[normal_,value_][points_] := VectorChopPoints[points,normal,value]
-
-			(* Vector | Transform *)
-				VectorTransform[points_,matrix_] := ArrayDot[points,Transpose[matrix]]
-				VectorTransform[matrix_][points_] := VectorTransform[points,matrix]
-
-			(* Vector | Rotate *)
-				VectorRotate[points_,matrix_?MatrixQ] := VectorTransform[points,matrix]
-				VectorRotate[points_,theta_?NumericQ] := VectorTransform[points,RotationMatrix[theta,IdentityMatrix[{2,EmbeddingDimension[points]}]]]
-				VectorRotate[matrix_][points_] := VectorTransform[points,matrix]
-
-			(* Vector | Affine | Rotate *)
-				VectorAffineRotate[points_,transform_,pivot_] := VectorTranslate[VectorRotate[VectorTranslate[points,Minus[pivot]],transform],pivot]
-				VectorAffineRotate[transform_,pivot_][points_] := VectorAffineRotate[points,transform,pivot]
-
-			(* Vector | Projection *)
-				VectorProject[{},subspace_] := {}
-				VectorProject[points_,0] := ArrayDot[points,ConstantArray[{},EmbeddingDimension[points]]]
-				VectorProject[points_,dimension_Integer] := ArrayDot[points,IdentityMatrix[{EmbeddingDimension[points],dimension}]]
-				VectorProject[points_,{}] := ArrayDot[points,ConstantArray[{},EmbeddingDimension[points]]]
-				VectorProject[points_,vector_?VectorQ] := ArrayDot[points,vector]
-				VectorProject[points_,subspace_?MatrixQ] := ArrayDot[points,Transpose[subspace]]
-				VectorProject[subspace_][points_] := VectorProject[points,subspace]
-
-			(* Vector | Affine | Projection *)
-				VectorAffineProject[points_,subspace_,pivot_] := VectorProject[VectorTranslate[points,Minus[pivot]],subspace]
-				VectorAffineProject[subspace_,pivot_][points_] := VectorAffineProject[points,subspace,pivot]
-
-			(* Vector | Embed *)
-				VectorEmbed[{},subspace_] := {}
-				VectorEmbed[points_,dimension_Integer] := ArrayDot[points,IdentityMatrix[{EmbeddingDimension[points],dimension}]]
-				VectorEmbed[points_,basis_?MatrixQ] := ArrayDot[points,basis]
-				VectorEmbed[basis_][points_] := VectorEmbed[points,basis]
-
-			(* Vector | Affine *)
-				VectorAffineEmbed[points_,subspace_,pivot_] := VectorTranslate[VectorEmbed[points,subspace],pivot]
-				VectorAffineTransform[points_,xform_?SquareMatrixQ,pivot_] := VectorTranslate[VectorTransform[VectorTranslate[points,Minus[pivot]],xform],pivot]
-
-			(* Vector | MatrixPlot *)
-				VectorMatrixPlot[vectors_?MatrixQ] := MatrixPlot[Transpose[vectors], Rule[Frame,None], Rule[Mesh,All], Rule[MaxPlotPoints,Infinity], Rule[MeshStyle,{{AbsoluteThickness[1],Hue[0,0,0,.1]}}], Rule[PixelConstrained,{8,8}]]
-				VectorMatrixPlot[vector_?VectorQ] := VectorMatrixPlot[{vector}]
-				VectorMatrixPlot[matrices_?ListQ] := Map[VectorMatrixPlot,matrices]
-
-			(* Vector Distance *)
-				(* Vector | Distance | point *)
-					VectorDistance[points_,origin_?Vector] := VectorNorm[VectorTranslate[points,Minus[origin]]]
-				(* Vector | Distance | Line *)
-					VectorDistanceToLine[base_,axis_][points_] := VectorNorm[VectorProject[VectorTranslate[points,Minus[base]],Orthogonalize[NullSpace[{axis}]]]]
-
-			(* Path *)
-				(* Vector | Path | Edges *)
-					VectorPathEdges[path_?MatrixQ] := Partition[path,2,1]
-
-				(* Vector | Path | ParallelTransport *)
-					VectorPathParallelTransport[path_] :=
-						Module[{
-								dim,
-								rotations,
-								frames,
-								tangent,
-								tangentNew,
-								frame,
-								rotation
-							},
-							dim = EmbeddingDimension[path];
-							frame = IdentityMatrix[dim];
-							rotations = {};
-							frame = IdentityMatrix[dim];
-							frames = {};
-							tangent = First[frame];
-							Do[
-								tangentNew = VectorNormalize[path[[i+1]]-path[[i]]];
-								If[MatrixRank[{tangent,tangentNew}] == 2,
-									rotation = RotationMatrix[{tangent,tangentNew}];
-									,
-									If[Negative[Dot[tangent,tangentNew]],
-										rotation = ReflectionMatrix[tangentNew];
-										,
-										rotation = IdentityMatrix[dim];
-									];
-								];
-								tangent = tangentNew;
-								frame = Dot[frame,Transpose[rotation]];
-								AppendTo[frames,frame];
-								AppendTo[rotations,rotation];
-							,{i,Length[path]-1}
-							];
-							AppendTo[rotations,Last[rotations]];
-							AppendTo[frames,Last[frames]];
-							Return[frames];
-						]
-
-			(* Simplex *)
-				(* Simplex | Normal *)
-					SimplexNormal[{{x_}}] := {1}
-					SimplexNormal[simplex_] := Apply[Cross,VectorTranslate[Rest[simplex],Minus[First[simplex]]]]
-
-				(* Simplex | Measure *)
-					SimplexMeasure /: SimplexMeasure[Simplex[pointCoordinates_]] := Abs[SimplexMeasure[pointCoordinates]]
-					SimplexMeasure[simplexInput_?MatrixQ] :=
-						Module[{
-								simplexVertices,
-								embeddingDimension,
-								affineDimension,
-								simplexVectors,
-								measure
-							},
-							simplexVertices = simplexInput;
-							embeddingDimension = EmbeddingDimension[simplexVertices];
-							affineDimension = Subtract[Length[simplexVertices],1];
-							If[Greater[affineDimension,embeddingDimension],
-								Return[0];];
-							simplexVectors = VectorTranslate[Rest[simplexVertices],Minus[First[simplexVertices]]];
-							If[Less[affineDimension,embeddingDimension],
-								simplexVectors = VectorProject[simplexVectors,Orthogonalize[simplexVectors]];];
-							measure = Divide[Det[simplexVectors],Factorial[affineDimension]];
-							measure = Abs[measure];
-							Return[measure];
-						]
-
-				(* Simplex | OrientedFacets *)
-					SimplexOrientedFacets[simplexVertices_] :=
-						If[LessEqual[Length[simplexVertices],2],
-							Subsets[simplexVertices,{Length[simplexVertices]-1}]
-							,
-							Module[{simplexVertexIndices,simplexVertexCount,simplexFacetCount,orientedFacetVertexIndices,orientedFacetVertices},
-								simplexVertexIndices = ListIndices[simplexVertices];
-								simplexVertexCount = Length[simplexVertices];
-								simplexFacetCount = simplexVertexCount;
-								orientedFacetVertexIndices = ConstantArray[Most[simplexVertexIndices],simplexFacetCount];
-								orientedFacetVertexIndices[[1,{1,2}]] = orientedFacetVertexIndices[[1,{2,1}]];
-								Do[
-									orientedFacetVertexIndices[[index+1,index]] = simplexVertexCount;
-								,{index,1,simplexVertexCount-1}];
-								orientedFacetVertices = Parts[simplexVertices,orientedFacetVertexIndices];
-								Return[orientedFacetVertices];
-							]
-						]
-
-				(* Simplex | OrientedQ *)
-					SimplexOrientedQ[simplex_?SquareMatrixQ] := Positive[Det[VectorTranslate[Rest[simplex],N[Minus[First[simplex]]]]]]
-					SimplexRegularQ[ verticesInput_?MatrixQ ] :=
-						Module[{
-								dimension,
-								vertexCount,
-								edgeCount,
-								vertices,
-								simplexRegularQ,
-								edgeLengthFunction,
-								edgeLengthTarget,
-								edgeIndex,
-								edgeVertices,
-								edgeLength
-							},
-							dimension = EmbeddingDimension[verticesInput];
-							vertexCount = Length[verticesInput];
-							edgeCount = Binomial[vertexCount,2];
-							If[Equal[vertexCount,1], Return[True];];
-							If[Greater[vertexCount,dimension], Return[False];];
-							vertices = N[verticesInput];
-							edgeLengthFunction = RightComposition[Differences,First,Norm];
-							edgeLengthTarget = First[Subsets[vertices,{2},{1}]] // edgeLengthFunction;
-							simplexRegularQ = True;
-							Do[
-								edgeVertices = First[Subsets[vertices,{2},{edgeIndex}]];
-								edgeLength = edgeVertices // edgeLengthFunction;
-								If[Not[NEqual[edgeLength,edgeLengthTarget]],
-									simplexRegularQ = False;
-									Break[];
-								];
-							,{edgeIndex,edgeCount}];
-							Return[simplexRegularQ];
-						]
-
-			(* Polygon *)
-				(* Polygon | Basis *)
-					PolygonBasis[points_] := Orthogonalize[VectorSpanningSet[VectorTranslate[Rest[N[points]],Minus[First[N[points]]]],2]]
-
-				(* Polygon | VertexOrdering *)
-					PolygonVertexOrdering[pointsInput_] :=
-						Module[{
-								points,
-								vectors,
-								plane,
-								args,
-								norms,
-								ordering
-							},
-							points = N[pointsInput];
-							If[LessEqual[Length[points],3], Return[ListIndices[points]];];
-							vectors = VectorRecenter[points];
-							plane = Orthogonalize[VectorSpanningSet[vectors,2]];
-							points = VectorProject[points,plane];
-							ordering = Ordering[VectorArg[VectorProject[vectors,plane]]];
-							Return[ordering];
-						]
-
-				(* Polygon | VertexSort *)
-					PolygonVertexSort[polygon_] := Part[polygon,PolygonVertexOrdering[polygon]]
-
-				(* Polygon | Attributes *)
-					PolygonEdges[polygon_] := Transpose[{polygon,RotateLeft[polygon]}]
-					PolygonMeasure[polygon_] := PolygonArea[polygon]
-					PolygonArea[polygonInput_] :=
-						Module[{
-								polygon,
-								basis,
-								origin,
-								polygonArea
-							},
-							polygon = VectorRecetner[N[polygonInput]];
-							basis = Orthogonalize[VectorSpanningSet[VectorRecetner[N[polygon]],2]];
-							polygon = polygon // VectorProject[basis];
-							polygon = Part[polygon,VectorArg[polygon]];
-							origin = OriginVector[EmbeddingDimension[polygon]];
-							polygonArea = polygon // VectorPathEdges // Map[Prepend[origin]] // Map[SimplexMeasure] // Total;
-							Return[polygonArea];
-						]
-
-			NOrthogonalMatrixQ[matrix_?MatrixQ] := OrthogonalMatrixQ[N[matrix]];
-
-			PrincipalVectorAngles[basis1_?(N /* OrthogonalMatrixQ), basis2_?(N /* OrthogonalMatrixQ)] := Re@ArcCos[SingularValueList[Dot[basis1,Transpose[basis2]]]]
-			PrincipalVectorAngles[basis1_?MatrixQ, basis2_?MatrixQ] := Re@ArcCos[SingularValueList[Dot[Orthogonalize[basis1],Transpose[Orthogonalize[basis2]]]]]
-			PrincipalVectorAngles[a:_VectorSpan|_AffineSpan, b:_VectorSpan| q_AffineSpan] := PrincipalVectorAngles[a["Basis"],b["Basis"]]
 
 	(* ConvexPolytope *)
 		ConvexPolytopeData[] :=
@@ -1200,8 +200,6 @@ BeginPackage["DuganHammock`ConvexPolytope`"];
 					If[data["Dimension"]==2, data["FaceVertexIndices",2] = {PolygonVertexOrdering[data["VertexCoordinates"]]};];
 				Return[ConvexPolytope[data]];
 			]
-
-
 		ConvexPolytopeSimplicialFacets[pointCoordinatesInput_] :=
 			Module[
 				{
@@ -1453,8 +451,6 @@ BeginPackage["DuganHammock`ConvexPolytope`"];
 					}
 				];
 			]
-
-
 		ConvexPolytopeSimplicialFaceComplexes[ nFacesInput_ ] := 
 			Module[{
 					nFaces,
@@ -1493,8 +489,6 @@ BeginPackage["DuganHammock`ConvexPolytope`"];
 				,{faceDimension,Complement[Keys[nFaces],{0,1}]}];
 				Return[nFaceComplexes];
 				]
-
-
 		ConvexPolytopeHalfSpaces::NotFeasible = "halfspaces do not intersect";
 		ConvexPolytopeHalfSpaces::NotBounded = "halfspace intersection not bounded";
 		ConvexPolytopeHalfSpaces[{normalsInput_, boundsInput_}] := 
@@ -1666,7 +660,8 @@ BeginPackage["DuganHammock`ConvexPolytope`"];
 		ConvexPolytope[data_]["Centroid"] := Mean[data["VertexCoordinates"]]
 		ConvexPolytope[data_]["RandomPoint",n_] := ConvexPolytopeRandomPoint[ConvexPolytope[data],n]
 		ConvexPolytope[data_]["Polygon"] := Polygon[ConvexPolytope[data]]
-
+		ConvexPolytope[data_]["Dual"] := ConvexPolytopeDual[ConvexPolytope[data]]
+		
 		ConvexPolytope[data_][methodName_, args___] := ConvexPolytopeKeyMaster[ConvexPolytope[data],methodName,args]
 		
 		ConvexPolytope /: Part[ConvexPolytope[data_],partspec__] := Part[data,partspec]
@@ -2257,8 +1252,6 @@ BeginPackage["DuganHammock`ConvexPolytope`"];
 				slicePolytope = ConvexPolytope[sliceVertices];
 				Return[slicePolytope];
 			]
-
-
 		ConvexPolytopeSlice[normal_,value_][polytope_] := ConvexPolytopeSlice[polytope,normal,value]
 
 		ConvexPolytopeEdgeChop[{p1_,p2_},{v1_,v2_}] := 
@@ -2478,6 +1471,1032 @@ BeginPackage["DuganHammock`ConvexPolytope`"];
 
 		ConvexPolytope /: AffineSpan[ConvexPolytope[p_]] := AffineSpan[Mean[N[p["VertexCoordinates"]]],p["AffineSpaceBasis"]]
 		ConvexPolytope /: VectorSpan[ConvexPolytope[p_]] := VectorSpan[p["AffineSpaceBasis"]]
+
+
+(* ::Subsection::Closed:: *)
+(*Boole*)
+
+
+	(* Boole *)
+		(* utility functions for Boolean operations on binary arrays *)
+		(* Boole => Boolean *)
+			Boolean[b_] := Positive[b]
+		(* Boole | Logic *)
+			(* Boole | Logic | Not *)
+				BooleNot[b_] := Subtract[1,b]
+			(* Boole | Logic | Compare *)
+				BooleAnd[x_,y__] := BitAnd[x,y]
+				BooleNand[x_,y__] := BooleNot[BooleAnd[x,y]]
+				BooleNor[x_,y__] := BooleNot[BooleOr[x,y]]
+				BooleOr[x_,y__] := BitOr[x,y]
+				BooleXor[x_,y__] := BitXor[x,y]
+			(* Boole | Logic | Test *)
+				AllBoole[b__] := Equal[1,Min[b]]
+				AnyBoole[b__] := Equal[1,Max[b]]
+				NoneBoole[b__] := Equal[0,Max[b]]
+		(* Boole | Sign *)
+			BoolePositive[x_] := Ramp[Sign[x]]
+			BooleNonPositive[x_] := UnitStep[Minus[x]]
+			BooleEqualToZero[x_] := BooleNot[BooleUnequalToZero[x]]
+			BooleUnequalToZero[x_] := Unitize[x]
+			BooleNegative[x_] := BooleNot[BooleNonNegative[x]]
+			BooleNonNegative[x_] := UnitStep[x]
+		(* Boole | Compare *)
+			BooleEqual[x_,y_] := BooleEqualToZero[Subtract[x,y]]
+			BooleGreater[x_,y_] := BoolePositive[Subtract[x,y]]
+			BooleGreaterEqual[x_,y_] := BooleNonNegative[Subtract[x,y]]
+			BooleLess[x_,y_] := BooleNegative[Subtract[x,y]]
+			BooleLessEqual[x_,y_] := BooleNonPositive[Subtract[x,y]]
+			BooleUnequal[x_,y_] := BooleUnequalToZero[Subtract[x,y]]
+			(* operators *)
+				BooleEqualTo[y_][x_] := BooleEqual[x,y]
+				BooleGreaterThan[y_][x_] := BooleGreater[x,y]
+				BooleGreaterEqualThan[y_][x_] := BooleGreaterEqual[x,y]
+				BooleLessThan[y_][x_] := BooleLess[x,y]
+				BooleLessEqualThan[y_][x_] := BooleLessEqual[x,y]
+				BooleUnequalTo[y_][x_] := BooleUnequal[x,y]
+
+
+(* ::Subsection::Closed:: *)
+(*List*)
+
+
+	(* List *)
+		(* utility functions for lists *)
+		(* Parts *)
+			Parts[list_, i_Integer] := Part[list,i]
+			Parts[list_, {indices___Integer}] := Part[list,{indices}]
+			Parts[list_, indexLists_List] := Map[Function[Parts[list,#]], indexLists]
+			Parts[list_][indices_] := Parts[list,indices]
+		(* Indices *)
+			ListIndices[list_List] := Range[Length[list]]
+			ElementIndices[x_,element_] := Pick[ListIndices[x],x,element]
+			SublistIndices[list_,sublist_] := Subtract[Part[Take[Values[PositionIndex[Join[sublist,list]]],Length[sublist]],All,2],Length[sublist]]
+		(* IndexSubset *)
+			IndexSubsetAdjacencyMatrix[indexSubsets_, maxIndex_:0] := Normal[IndexSubsetAdjacencyMatrixSparse[indexSubsets, maxIndex]]
+			IndexSubsetAdjacencyMatrixSparse[indexSubsets_, maxIndex_:0] := SparseArray[Rule[Flatten[MapIndexed[Composition[Tuples,List],indexSubsets],1],1],{Max[maxIndex,indexSubsets],Length[indexSubsets]}]
+			IndexSubsetMemberships[pointIndexSubsets_] := Map[Function[pointSubsetAdj,Pick[ListIndices[pointIndexSubsets],pointSubsetAdj,1]],IndexSubsetAdjacencyMatrixSparse[pointIndexSubsets]]
+		(* Gather *)
+			GatherIndices[x_] := Values[PositionIndex[x]]
+			GatherIndicesBy[x_, f_] := Values[PositionIndex[Map[f,x]]]
+			GatherByList[x_, y_] := Parts[x,GatherIndices[y]]
+		(* Duplicates *)
+			(* Duplicates | Indices *)
+				DuplicateIndexSets[x_] := Cases[PositionIndex[x],{i_,j__} :> {i,j}]
+				DuplicateIndices[x_] := Apply[Union,DuplicateIndexSets[x]]
+				FirstDuplicateIndices[x_] := Cases[PositionIndex[x],{i_,j__} :> i]
+				NonDuplicateIndices[x_] := Cases[PositionIndex[x],{i_}:>i]
+				DeleteDuplicateIndices[x_] := Part[Values[PositionIndex[x]],All,1]
+			(* Duplicates *)
+				Duplicates[x_] := Cases[Tally[x],RuleDelayed[{e_,Except[1]},e]]
+				NonDuplicates[x_] := Cases[Tally[x],RuleDelayed[{e_,1},e]]
+				FirstDuplicates[x_] := Part[x,FirstDuplicateIndices[x]]
+				DuplicateSets[x_] := Cases[Tally[x],{i_}:>i]
+				(* DeleteDuplicates *)
+		(* Set *)
+			(* Set | Empty *)
+				EmptySet[] := {}
+				EmptySetQ[x_] := Equal[0,Length[x]]
+				SetNonEmptyQ[x_] := Positive[Length[x]]
+			(* Set | Indices *)
+				IntersectionIndices[x_,y_] := SublistIndices[x,Intersection[x,y]]
+				ComplementIndices[x_,y_] := SublistIndices[x,Complement[x,y]]
+		(* Maximal *)
+			(* Maximal | Indices *)
+				MaximalIndex[x_] := First[Ordering[x,-1]]
+				MaximalIndices[x_] := Pick[ListIndices[x], x, MaximalElement[x]]
+			(* Maximal | Elements *)
+				MaximalElement[x_] := Part[x, MaximalIndex[x]]
+				MaximalElements[x_] := Part[x, MaximalIndices[x]]
+		(* Minimal *)
+			(* Minimal | Indices *)
+				MinimalIndex[x_] := First[Ordering[x,1]]
+				MinimalIndices[x_] := Pick[ListIndices[x],x,MinimalElement[x]]
+			(* Minimal | Elements *)
+				MinimalElement[x_] := Part[x,MinimalIndex[x]]
+				MinimalElements[x_] := Part[x,MinimalIndices[x]]
+		(* Sign *)
+			(* All | Sign *)
+				AllNegative[x_] := AllBoole[BooleNegative[x]]
+				AllNonNegative[x_] := AllBoole[BooleNonNegative[x]]
+				AllUnequalToZero[x_] := AllBoole[BooleUnequalToZero[x]]
+				AllPositive[x_] := AllBoole[BoolePositive[x]]
+				AllEqualToZero[x_] := AllBoole[BooleEqualToZero[x]]
+			(* Any | Sign *)
+				AnyNegative[x_] := AnyBoole[BooleNegative[x]]
+				AnyNonNegative[x_] := AnyBoole[BooleNonNegative[x]]
+				AnyUnequalToZero[x_] := AnyBoole[BooleUnequalToZero[x]]
+				AnyPositive[x_] := AnyBoole[BoolePositive[x]]
+				AnyEqualToZero[x_] := AnyBoole[BooleEqualToZero[x]]
+			(* None | Sign *)
+				NoneNegative[x_] := NoneBoole[BooleNegative[x]]
+				NoneNonNegative[x_] := NoneBoole[BooleNonNegative[x]]
+				NoneUnequalToZero[x_] := NoneBoole[BooleUnequalToZero[x]]
+				NonePositive[x_] := NoneBoole[BoolePositive[x]]
+				NoneEqualToZero[x_] := NoneBoole[BooleEqualToZero[x]]
+		(* Compare *)
+			(* for comparing numerical lists *)
+			(* List | Compare *)
+				ListEqual[x_,y_] := Boolean[BooleEqualToZero[Subtract[x,y]]]
+				ListGreater[x_,y_] := Boolean[BooleGreater[x,y]]
+				ListGreaterEqual[x_,y_] := Boolean[BooleGreaterEqual[x,y]]
+				ListLess[x_,y_] := Boolean[BooleLess[x,y]]
+				ListLessEqual[x_,y_] := Boolean[BooleLessEqual[x,y]]
+				ListUnequal[x_,y_] := Boolean[BooleUnequal[x,y]]
+				(* operators *)
+					ListEqualTo[y_][x_] := ListEqual[x,y]
+					ListGreaterThan[y_][x_] := ListGreater[x,y]
+					ListGreaterEqualThan[y_][x_] := ListGreaterEqual[x,y]
+					ListLessThan[y_][x_] := ListLess[x,y]
+					ListLessEqualThan[y_][x_] := ListLessEqual[x,y]
+					ListUnequalTo[y_][x_] := ListUnequal[x,y]
+			(* All | Compare *)
+				AllEqual[x_,y_] := AllBoole[BooleEqual[x,y]]
+				AllGreater[x_,y_] := AllBoole[BooleGreater[x,y]]
+				AllGreaterEqual[x_,y_] := AllBoole[BooleGreaterEqual[x,y]]
+				AllLess[x_,y_] := AllBoole[BooleLess[x,y]]
+				AllLessEqual[x_,y_] := AllBoole[BooleLessEqual[x,y]]
+				AllUnequal[x_,y_] := AllBoole[BooleUnequal[x,y]]
+				(* operators *)
+					AllEqualTo[y_][x_] := AllEqual[x,y]
+					AllGreaterThan[y_][x_] := AllGreater[x,y]
+					AllGreaterEqualThan[y_][x_] := AllGreaterEqual[x,y]
+					AllLessThan[y_][x_] := AllLess[x,y]
+					AllLessEqualThan[y_][x_] := AllLessEqual[x,y]
+					AllUnequalTo[y_][x_] := AllUnequal[x,y]
+			(* Any | Compare *)
+				AnyEqual[x_,y_] := AnyBoole[BooleEqual[x,y]]
+				AnyGreater[x_,y_] := AnyBoole[BooleGreater[x,y]]
+				AnyGreaterEqual[x_,y_] := AnyBoole[BooleGreaterEqual[x,y]]
+				AnyLess[x_,y_] := AnyBoole[BooleLess[x,y]]
+				AnyLessEqual[x_,y_] := AnyBoole[BooleLessEqual[x,y]]
+				AnyUnequal[x_,y_] := AnyBoole[BooleUnequal[x,y]]
+				(* operators *)
+					AnyEqualTo[y_][x_] := AnyEqual[x,y]
+					AnyGreaterThan[y_][x_] := AnyGreater[x,y]
+					AnyGreaterEqualThan[y_][x_] := AnyGreaterEqual[x,y]
+					AnyLessThan[y_][x_] := AnyLess[x,y]
+					AnyLessEqualThan[y_][x_] := AnyLessEqual[x,y]
+					AnyUnequalTo[y_][x_] := AnyUnequal[x,y]
+			(* None | Compare *)
+				NoneEqual[x_,y_] := NoneBoole[BooleEqual[x,y]]
+				NoneGreater[x_,y_] := NoneBoole[BooleGreater[x,y]]
+				NoneGreaterEqual[x_,y_] := NoneBoole[BooleGreaterEqual[x,y]]
+				NoneLess[x_,y_] := NoneBoole[BooleLess[x,y]]
+				NoneLessEqual[x_,y_] := NoneBoole[BooleLessEqual[x,y]]
+				NoneUnequal[x_,y_] := NoneBoole[BooleUnequal[x,y]]
+				(* operators *)
+					NoneEqualTo[y_][x_] := NoneEqual[x,y]
+					NoneGreaterThan[y_][x_] := NoneGreater[x,y]
+					NoneGreaterEqualThan[y_][x_] := NoneGreaterEqual[x,y]
+					NoneLessThan[y_][x_] := NoneLess[x,y]
+					NoneLessEqualThan[y_][x_] := NoneLessEqual[x,y]
+					NoneUnequalTo[y_][x_] := NoneUnequal[x,y]
+
+
+(* ::Subsection::Closed:: *)
+(*Numeric*)
+
+
+	(* Numeric *)
+		(* N | Precision *)
+			$NTolerance = 10.^-10;
+		(* N | Chop *)
+			NChop[{}] := {}
+			NChop[x_?ArrayQ] := Threshold[x,{"Hard",$NTolerance}]
+			NChop[x_List] := Map[NChop,x]
+			NChop[x_] := N[Chop[x,$NTolerance]]
+		(* N | Pick *)
+			NPick[list_, sel_, pattern_] := Pick[list, NRound[sel], NRound[pattern]]
+		(* N | Round *)
+			NRound[x_] := Round[x,$NTolerance]
+		(* Unit *)
+			NonUnitize[x_] := Subtract[1,Unitize[x]]
+			UnitDelta[x_] := NonUnitize[x]
+			InvertUnits[x_] := With[{xUnital = Unitize[x]},Times[Power[Plus[x,Subtract[1,xUnital]],-1],xUnital]]
+		(* N | Unit *)
+			NUnitize[x_] := Unitize[NChop[x]]
+			NNonUnitize[x_] := Subtract[1,NUnitize[x]]
+			NUnitDelta[x_] := NNonUnitize[x]
+			NUnitStep[x_] := UnitStep[Plus[x,$NTolerance]]
+			NInvertUnits[x_] := With[{xNUnital = NUnitize[x]},Times[Power[Plus[x,Subtract[1,xNUnital]],-1],xNUnital]]
+		(* N | Boole *)
+			(* N | Boole | Sign *)
+				BooleNEqualToZero[x_] := NUnitDelta[x]
+				BooleNNegative[x_] := UnitStep[Subtract[Minus[$NTolerance],x]]
+				BooleNNonNegative[x_] := UnitStep[Plus[x,$NTolerance]]
+				BooleNNonPositive[x_] := UnitStep[Subtract[$NTolerance,x]]
+				BooleNPositive[x_] := UnitStep[Plus[x,Minus[$NTolerance]]]
+				BooleNUnequalToZero[x_] := NUnitize[x]
+			(* N | Boole | Compare *)
+				BooleNEqual[x_,y_] := BooleNEqualToZero[Subtract[x,y]]
+				BooleNGreater[x_,y_] := BooleNPositive[Subtract[x,y]]
+				BooleNGreaterEqual[x_,y_] := BooleNNonNegative[Subtract[x,y]]
+				BooleNLess[x_,y_] := BooleNNegative[Subtract[x,y]]
+				BooleNLessEqual[x_,y_] := BooleNNonPositive[Subtract[x,y]]
+				BooleNUnequal[x_,y_] := BooleNEqualToZero[Subtract[x,y]]
+		(* N | Gather *)
+			NGather[x_] := GatherByList[x,NRound[x]]
+			NGatherByList[x_,y_] := GatherByList[x,NRound[y]]
+			NGatherIndices[x_] := GatherIndices[NRound[x]]
+		(* N | Duplicates *)
+			(* N | Duplicates | Indices *)
+				NDeleteDuplicateIndices[x_] := DeleteDuplicateIndices[NRound[x]]
+				NDuplicateIndexSets[x_] := DuplicateIndexSets[NRound[x]]
+				NDuplicateIndices[x_] := DuplicateIndices[NRound[x]]
+				NFirstDuplicateIndices[x_] := FirstDuplicateIndices[NRound[x]]
+				NNonDuplicateIndices[x_] := NonDuplicateIndices[NRound[x]]
+			(* N | Duplicates *)
+				NDeleteDuplicates[x_] := Part[x,NDeleteDuplicateIndices[x]]
+				NDuplicates[x_] := Part[x,NDuplicateIndices[x]]
+				NDuplicateSets[x_] := Part[x,NDuplicateIndexSets[x]]
+				NFirstDuplicates[x_] := Part[x,NFirstDuplicateIndices[x]]
+				NNonDuplicates[x_] := Part[x,NNonDuplicateIndices[x]]
+			(* N | Union *)
+				NUnion[x_] := NumericalSort[NDeleteDuplicates[x]]
+		(* N | Set *)
+			(* N | Complement *)
+				NComplementIndices[x_,y_] := ComplementIndices[NRound[x],NRound[y]]
+				NComplement[x_,y_] := Part[x,NComplementIndices[x,y]]
+				NComplement[x_,y_,z__] := NComplement[NComplement[x,y],z]
+				NMemberQ[list_, form_] := MemberQ[NRound[list],NRound[form]]
+			(* N | Intersection *)
+				NIntersectionIndices[x_,y_] := IntersectionIndices[NRound[x],NRound[y]]
+				NIntersection[x_,y_] := Part[x,NIntersectionIndices[x,y]]
+				NIntersection[x_,y_,z__] := NIntersection[NIntersection[x,y],z]
+		(* N | Maximal *)
+			NMaximalElement[x_] := NRound[Max[x]]
+			NMaximalElements[x_] := Part[x,MaximalIndices[x]]
+			NMaximalIndex[x_] := First[Ordering[x,-1]]
+			NMaximalIndices[x_] := Pick[ListIndices[x], x, MaximalElement[x]]
+		(* N | Minimal *)
+			NMinimalElement[x_] := Part[x,MinimalIndex[x]]
+			NMinimalElements[x_] := Part[x,MinimalIndices[x]]
+			NMinimalIndex[x_] := First[Ordering[x,-1]]
+			NMinimalIndices[x_] := Pick[ListIndices[x],x,MinimalElement[x]]
+		(* N | Sign *)
+			(* N | Sign *)
+				NSign[x_] := Sign[NChop[x]]
+			(* N | Sign | Test *)
+				NPositive[x_] := Boolean[BooleNPositive[x]]
+				NNonPositive[x_] := Boolean[BooleNNonPositive[x]]
+				NEqualToZero[x_] := Boolean[BooleNUnequalToZero[x]]
+				NUnequalToZero[x_] := Boolean[BooleNUnequalToZero[x]]
+				NNegative[x_] := Boolean[BooleNNegative[x]]
+				NNonNegative[x_] := Boolean[BooleNNonNegative[x]]
+			(* N | All | Sign *)
+				AllNEqualToZero[x_]  := AllBoole[BooleNEqualToZero[x]]
+				AllNNegative[x_]  := AllBoole[BooleNNegative[x]]
+				AllNNonNegative[x_]  := AllBoole[BooleNNonNegative[x]]
+				AllNPositive[x_]  := AllBoole[BooleNPositive[x]]
+				AllNNonPositive[x_]  := AllBoole[BooleNonPositive[x]]
+				AllNUnequalToZero[x_]  := AllBoole[BooleNUnequalToZero[x]]
+			(* N | Any | Sign *)
+				AnyNEqualToZero[x_] := AnyBoole[BooleNEqualToZero[x]]
+				AnyNNegative[x_] := AnyBoole[BooleNNegative[x]]
+				AnyNNonNegative[x_] := AnyBoole[BooleNNonNegative[x]]
+				AnyNPositive[x_] := AnyBoole[BooleNPositive[x]]
+				AnyNNonPositive[x_]  := AnyBoole[BooleNNonPositive[x]]
+				AnyNUnequalToZero[x_] := AnyBoole[BooleNUnequalToZero[x]]
+			(* N | None | Sign *)
+				NoneNEqualToZero[x_] := NoneBoole[NEqualToZero[x]]
+				NoneNNegative[x_] := NoneBoole[NNegative[x]]
+				NoneNNonNegative[x_] := NoneBoole[NNonNegative[x]]
+				NoneNPositive[x_] := NoneBoole[NPositive[x]]
+				NoneNNonPositive[x_] := NoneBoole[NNonPositive[x]]
+				NoneNUnequalToZero[x_] := NoneBoole[NUnequalToZero[x]]
+		(* N | Compare *)
+			NEqual[x_,y_] := AllNEqual[x,y]
+			NGreater[x_,y_] := AllNGreater[x,y]
+			NGreaterEqual[x_,y_] := AllNGreaterEqual[x,y]
+			NLess[x_,y_] := AllNLess[x,y]
+			NLessEqual[x_,y_] := AllNLessEqual[x,y]
+			NUnequal[x_,y_] := AllNUnequal[x,y]
+			(* N | Compare | Operators *)
+				NEqualTo[y_][x_] := NEqual[x,y]
+				NGreaterThan[y_][x_] := NGreater[x,y]
+				NGreaterEqualThan[y_][x_] := NGreaterEqual[x,y]
+				NLessThan[y_][x_] := NLess[x,y]
+				NLessEqualThan[y_][x_] := NLessEqual[x,y]
+				NUnequalTo[y_][x_] := NUnequal[x,y]
+			(* N | List | Compare *)
+				ListNEqual[x_,y_] := Boolean[BooleNEqual[x,y]]
+				ListNGreater[x_,y_] := Boolean[BooleNGreater[x,y]]
+				ListNGreaterEqual[x_,y_] := Boolean[BooleNGreaterEqual[x,y]]
+				ListNLess[x_,y_] := Boolean[BooleNLess[x,y]]
+				ListNLessEqual[x_,y_] := Boolean[BooleNLessEqual[x,y]]
+				ListNUnequal[x_,y_] := Boolean[BooleNUnequal[x,y]]
+				(* operators *)
+					ListNEqualTo[y_][x_] := ListNEqual[x,y]
+					ListNGreaterThan[y_][x_] := ListNGreater[x,y]
+					ListNGreaterEqualThan[y_][x_] := ListNGreaterEqual[x,y]
+					ListNLessThan[y_][x_] := ListNLess[x,y]
+					ListNLessEqualThan[y_][x_] := ListNLessEqual[x,y]
+					ListNUnequalTo[y_][x_] := ListNUnequal[x,y]
+			(* N | All | Compare *)
+				AllNEqual[x_,y_] := AllBoole[BooleNEqual[x,y]]
+				AllNGreater[x_,y_] := AllBoole[BooleNGreater[x,y]]
+				AllNGreaterEqual[x_,y_] := AllBoole[BooleNGreaterEqual[x,y]]
+				AllNLess[x_,y_] := AllBoole[BooleNLess[x,y]]
+				AllNLessEqual[x_,y_] := AllBoole[BooleNLessEqual[x,y]]
+				AllNUnequal[x_,y_] := AllBoole[BooleNUnequal[x,y]]
+				(* operators *)
+					AllNEqualTo[y_][x_] := AllNEqual[x,y]
+					AllNGreaterThan[y_][x_] := AllNGreater[x,y]
+					AllNGreaterEqualThan[y_][x_] := AllNGreaterEqual[x,y]
+					AllNLessThan[y_][x_] := AllNLess[x,y]
+					AllNLessEqualThan[y_][x_] := AllNLessEqual[x,y]
+					AllNUnequalTo[y_][x_] := AllNUnequal[x,y]
+			(* N | Any | Compare *)
+				AnyNEqual[x_,y_] := AnyBoole[BooleNEqual[x,y]]
+				AnyNGreater[x_,y_] := AnyBoole[BooleNGreater[x,y]]
+				AnyNGreaterEqual[x_,y_] := AnyBoole[BooleNGreaterEqual[x,y]]
+				AnyNLess[x_,y_] := AnyBoole[BooleNLess[x,y]]
+				AnyNLessEqual[x_,y_] := AnyBoole[BooleNLessEqual[x,y]]
+				AnyNUnequal[x_,y_] := AnyBoole[BooleNUnequal[x,y]]
+				(* operators *)
+					AnyNEqualTo[y_][x_] := AnyNEqual[x,y]
+					AnyNGreaterThan[y_][x_] := AnyNGreater[x,y]
+					AnyNGreaterEqualThan[y_][x_] := AnyNGreaterEqual[x,y]
+					AnyNLessThan[y_][x_] := AnyNLess[x,y]
+					AnyNLessEqualThan[y_][x_] := AnyNLessEqual[x,y]
+					AnyNUnequalTo[y_][x_] := AnyNUnequal[x,y]
+			(* N | None | Compare *)
+				NoneNEqual[x_,y_] := NoneBoole[BooleNEqual[x,y]]
+				NoneNGreater[x_,y_] := NoneBoole[BooleNGreater[x,y]]
+				NoneNGreaterEqual[x_,y_] := NoneBoole[BooleNGreaterEqual[x,y]]
+				NoneNLess[x_,y_] := NoneBoole[BooleNLess[x,y]]
+				NoneNLessEqual[x_,y_] := NoneBoole[BooleNLessEqual[x,y]]
+				NoneNUnequal[x_,y_] := NoneBoole[BooleNUnequal[x,y]]
+				(* operators *)
+					NoneNEqualTo[y_][x_] := NoneNEqual[x,y]
+					NoneNGreaterThan[y_][x_] := NoneNGreater[x,y]
+					NoneNGreaterEqualThan[y_][x_] := NoneNGreaterEqual[x,y]
+					NoneNLessThan[y_][x_] := NoneNLess[x,y]
+					NoneNLessEqualThan[y_][x_] := NoneNLessEqual[x,y]
+					NoneNUnequalTo[y_][x_] := NoneNUnequal[x,y]
+
+
+(* ::Subsection::Closed:: *)
+(*Vector*)
+
+
+	(* Vector *)
+		(* Array *)
+			(* Array | Transpose *)
+				ArrayTranspose[array_?ArrayQ] := Transpose[array,TwoWayRule[1,ArrayDepth[array]]]
+
+			(* Array | Dot *)
+				ArrayDot[___,{},___] := {}
+				ArrayDot[a_?ArrayQ,b_?ArrayQ] := Dot[a,b]
+				ArrayDot[A_?ListQ,b_?ArrayQ] := Map[Function[ArrayDot[#,b]],A]
+				ArrayDot[a_?ArrayQ,B_?ListQ] := Map[Function[ArrayDot[a,#]],B]
+				ArrayDot[a_,b_,c__] := ArrayDot[ArrayDot[a,b],c]
+
+		(* Vector *)
+			(* Vector | Construct *)
+				OriginVector[n_Integer] := ConstantArray[0,n]
+				DiagonalVector[n_] := ConstantArray[1,n]
+
+			(* Vector | Query *)
+				OriginVectorQ[vectors_] := ListNEqual[VectorNorm[vectors],0]
+				UnitVectorQ[vectors_] := ListNEqual[VectorNorm[vectors],1]
+
+		(* Dimension *)
+			(* Dimension| Embedding *)
+				EmbeddingDimension[vertices_] := If[ArrayQ[vertices],Last[Dimensions[vertices]],EmbeddingDimension[First[vertices]]]
+					(* alias *)
+					VectorDimension[vertices_] := EmbeddingDimension[vertices]
+
+			(* Dimension | VectorSpan *)
+				VectorSpanDimension[{}] := -1
+				VectorSpanDimension[vectors_List] := MatrixRank[N[vectors]]
+					(* alias *)
+					VectorSpaceDimension[vectors_] := VectorSpanDimension[vectors]
+
+			(* Dimension | AffineSpan *)
+				AffineSpanDimension[ {} | {{}} ] := -1
+				AffineSpanDimension[points_] := VectorSpanDimension[VectorTranslate[points,N[Minus[First[points]]]]]
+					(* alias *)
+					AffineSpaceDimension[points_] := AffineSpanDimension[points]
+
+			(* Vector | Properties *)
+				VectorCoordinateSum[vectors_] := ArrayDot[vectors,DiagonalVector[EmbeddingDimension[vectors]]]
+				VectorArg[points_] := Arg[ArrayDot[VectorProject[points,2],{1,I}]]
+
+			(* Vector | Norm *)
+				VectorNormSquared[vectors_] := VectorCoordinateSum[Power[Abs[vectors],2]]
+				VectorNorm[vectors_] := Sqrt[VectorNormSquared[vectors]]
+				VectorNormalize[vectors_List] := Times[vectors,NInvertUnits[VectorNorm[vectors]]]
+
+		(* Matrix *)
+			(* Matrix | Query *)
+				VectorIndependentQ[vectors_] := Equal[VectorSpanDimension[vectors],Length[vectors]]
+				MatrixRankFullQ[vectors_] := VectorIndependentQ[vectors]
+
+				(* alias *)
+				VectorDepenentQ[vectors_] := Not[VectorIndependentQ[vectors]]
+				MatrixRankMaximalQ[vectors_] := Equal[VectorSpanDimension[vectors],EmbeddingDimension[vectors]]
+				MatrixRankNullQ[vectors_] := Equal[0,VectorSpanDimension[vectors]]
+				MatrixInvertibleQ[matrix_] := And[SquareMatrixQ[matrix],NUnequalToZero[Det[N[matrix]]]]
+					MatrixGeneralLinearQ[matrix_] := MatrixInvertibleQ[matrix]
+				MatrixSpecialLinearQ[matrix_] := And[MatrixGeneralLinearQ[matrix],NEqual[Det[matrix],1]]
+				NOrthogonalize[matrix_] := If[OrthogonalMatrixQ[N[matrix]], matrix, NChop[Orthogonalize[matrix]]]
+
+			(* Matrix | Standardize *)
+				MatrixSpecialize[matrix_] := MatrixNormalizeDeterminant[VectorOrient[matrix]]
+				MatrixNormalizeDeterminant[matrix_] := If[MatrixGeneralLinearQ[matrix], Times[matrix,Power[Abs[Det[matrix]],Minus[Length[matrix]]]], matrix]
+
+			(* Matrix | Random | Orthogonal *)
+				RandomOrthogonalMatrix[embeddingDimension_Integer] := Orthogonalize[RandomReal[{-1,1},{embeddingDimension,embeddingDimension}]]
+				RandomOrthogonalMatrix[embeddingDimension_Integer, subspaceDimension_Integer] := Orthogonalize[RandomReal[{-1,1},{subspaceDimension,embeddingDimension}]]
+				RandomOrthogonalMatrix[{subspaceDimension_Integer, embeddingDimension_Integer}] := Orthogonalize[RandomReal[{-1,1},{subspaceDimension,embeddingDimension}]]
+
+			(* Matrix | Random | SpecialOrthogonal *)
+				RandomSpecialOrthogonalMatrix[dimension_Integer] := MatrixSpecialize[RandomOrthogonalMatrix[dimension]]
+
+			(* Matrix | Random | Reflection *)
+				RandomReflectionMatrix[dimension_] := ReflectionMatrix[RandomReal[{-1,1},{dimension}]]
+
+		(* Vector | Space *)
+			(* Vector | SpanningSet | Indices *)
+				VectorSpanningSetIndices[{}] := {}
+				VectorSpanningSetIndices[vectors_?MatrixQ, maxDimension_:Infinity] :=
+					Module[{
+							vectorsN,
+							embeddingDimension,
+							remainingVectorBooles,
+							remainingVectors,
+							remainingVectorIndices,
+							spanningVectorIndices,
+							spanningVectorIndex,
+							spanningVector
+						},
+						embeddingDimension = EmbeddingDimension[vectors];
+						vectorsN = N[vectors];
+						remainingVectors = vectorsN;
+						remainingVectorIndices = ListIndices[vectorsN];
+						spanningVectorIndices = {};
+						Do[
+							remainingVectorBooles = BooleNPositive[VectorNorm[remainingVectors]];
+							If[NoneBoole[remainingVectorBooles],Break[];];
+							remainingVectorIndices = Pick[remainingVectorIndices, remainingVectorBooles, 1];
+							remainingVectors = Pick[remainingVectors, remainingVectorBooles, 1];
+
+							spanningVectorIndex = First[remainingVectorIndices];
+							spanningVector = First[remainingVectors];
+							AppendTo[spanningVectorIndices,spanningVectorIndex];
+							If[EmptySetQ[remainingVectorIndices],Break[];];
+							remainingVectorIndices = Rest[remainingVectorIndices];
+							remainingVectors = Rest[remainingVectors];
+							remainingVectors = VectorProject[remainingVectors,NullSpace[{spanningVector}]] // Chop;
+
+						,{Min[Length[vectors],maxDimension,embeddingDimension]}];
+						Return[spanningVectorIndices];
+					]
+			(* Vector | SpanningSet *)
+				VectorSpanningSet[vectors_, maxDimension_:Infinity] := Part[vectors,VectorSpanningSetIndices[vectors,maxDimension]]
+		(* Basis *)
+			(* Basis | Orientation *)
+				VectorOrientedQ[basis_] := If[SquareMatrixQ[basis],Positive[Chop[Det[N[basis]]]],True]
+				VectorOrient[basis_] := If[Not[VectorOrientedQ[basis]],ReverseBasisOrientation[basis],basis]
+			(* Basis | Orientation | Reverse *)
+				ReverseBasisOrientation[ {} | {{}} ] := {}
+				ReverseBasisOrientation[{v1_}] := {Minus[v1]}
+				ReverseBasisOrientation[{v1_,v2_,v3___}] := {v2,v1,v3}
+		(* Vector | Span *)
+			(* Empty | Span *)
+				EmptySpace[] := EmptySpace[<|"EmbeddingDimension"->Minus[1]|>]
+				EmptySpace[n_Integer] := EmptySpace[<|"EmbeddingDimension"->n|>]
+				EmptySpace[data_Association]["Dimension"] := Minus[1]
+				EmptySpace[data_Association]["EmbeddingDimension"] := data["EmbeddingDimension"]
+			(* Vector | Space | Construct *)
+				VectorSpan[n_Integer] := VectorSpan[IdentityMatrix[n]]
+				VectorSpan[n_Integer, k_Integer] := VectorSpan[IdentityMatrix[{k,n}]]
+				VectorSpan[{} | {{}}] := EmptySpace[]
+				VectorSpan[vector_?VectorQ] := VectorSpan[{vector}]
+				VectorSpan[vectors_?MatrixQ] :=
+					Module[{
+							embeddingDimension,
+							dimension,
+							spanningVectors,
+							basis
+						},
+						embeddingDimension = EmbeddingDimension[vectors];
+						spanningVectors = VectorSpanningSet[vectors];
+						dimension = Length[spanningVectors];
+						basis = NOrthogonalize[spanningVectors];
+						nullSpaceBasis = If[Positive[dimension], NOrthogonalize[NullSpace[basis]], IdentityMatrix[embeddingDimension]];
+						VectorSpan[
+							<|
+								"Dimension" -> dimension,
+								"EmbeddingDimension" -> embeddingDimension,
+								"Basis" -> basis,
+								"NullSpace" -> nullSpaceBasis
+							|>
+						]
+					]
+			(* Vector | Span | Attributes *)
+				VectorSpan[data_Association]["Dimension"|"dimension"|"Dim"|"dim"|"D"|"d"] := data["Dimension"]
+				VectorSpan[data_Association]["EmbeddingDimension"|"embdim"|"edim"|"EDim"|"ed"|"e"] := data["EmbeddingDimension"]
+				VectorSpan[data_Association]["Basis"|"basis"|"B"|"b"] := data["Basis"]
+				VectorSpan[data_Association]["NullSpace"|"nullspace"|"NullBasis"|"nullbasis"|"N"|"n"] := data["NullSpace"]
+			(* Vector | Span | Properties *)
+				VectorSpan[data_Association]["Codimension"|"Codim"|"codim"|"cdim"|"cd"|"c"] := Subtract[data["EmbeddingDimension"],data["Dimension"]]
+				VectorSpan[data_Association]["Origin"|"origin"|"O"|"o"] := OriginVector[data["EmbeddingDimension"]]
+			(* Vector | Intersection *)
+				VectorSpanIntersection[___, emptySpace_EmptySpace, ___] := emptySpace
+				VectorSpanIntersection[a_, b_, c__] := VectorSpanIntersection[VectorSpanIntersection[a,b],c]
+				VectorSpanIntersection[a_AffineSpan, b_AffineSpan] := VectorSpanIntersection[VectorSpan[a],VectorSpan[b]]
+				VectorSpanIntersection[a_AffineSpan, b_VectorSpan] := VectorSpanIntersection[VectorSpan[a],b]
+				VectorSpanIntersection[a_VectorSpan, b_AffineSpan] := VectorSpanIntersection[a,VectorSpan[b]]
+				VectorSpanIntersection[a_VectorSpan, b_VectorSpan] :=
+					Module[{
+							embeddingDimension,
+							dimension,
+							basis1,
+							basis2,
+							basis,
+							nullSpaceBasis
+						},
+						If[Unequal[a["EmbeddingDimension"],b["EmbeddingDimension"]],Return[EmptySpace[]];];
+						If[Or[a["Dimension"]==0,b["Dimension"]==0],Return[VectorSpan[embeddingDimension,0]];];
+						embeddingDimension = a["EmbeddingDimension"];
+
+						If[And[a["Dimension"]==embeddingDimension,b["Dimension"]==embeddingDimension],Return[VectorSpan[embeddingDimension,embeddingDimension]];];
+						If[And[a["Dimension"]==embeddingDimension],Return[b];];
+						If[And[b["Dimension"]==embeddingDimension],Return[a];];
+						basis = NOrthogonalize[NullSpace[Join[a["NullSpace"],b["NullSpace"]]]];
+						nullSpaceBasis = If[basis=={},
+							IdentityMatrix[embeddingDimension],
+							Orthogonalize[NullSpace[basis]]
+						];
+						dimension = Length[basis];
+						VectorSpan[
+							<|
+								"Dimension" -> dimension,
+								"EmbeddingDimension" -> embeddingDimension,
+								"Basis" -> basis,
+								"NullSpace" -> nullSpaceBasis
+							|>
+						]
+					]
+		(* Affine *)
+			(* Affine | SpanningSet *)
+				AffineSpanningSet[ {} | {{}} ] := {}
+				AffineSpanningSet[point_?VectorQ] := {point}
+				AffineSpanningSet[{point_?VectorQ}] := {point}
+				AffineSpanningSet[points_?MatrixQ] := Prepend[Part[{points},VectorSpanningSetIndices[VectorTranslate[{points},Minus[point]]]], point]
+
+			(* Affine | Span *)
+				AffineSpan[n_Integer] := AffineSpan[n,n]
+				AffineSpan[n_Integer, k_Integer] := AffineSpan[OriginVector[n],IdentityMatrix[{k,n}]]
+				AffineSpan[{} | {{}}] := EmptySpace[]
+				AffineSpan[point_?VectorQ, k_Integer] := AffineSpan[point,IdentityMatrix[{k,EmbeddingDimension[point]}]]
+				AffineSpan[point_?VectorQ] := AffineSpan[point,{}]
+				AffineSpan[{point_?VectorQ}] := AffineSpan[point,{}]
+				AffineSpan[{point_?VectorQ, points__?VectorQ}] := AffineSpan[point, VectorTranslate[{points},Minus[point]]]
+
+				AffineSpan[point_?VectorQ, {} | {{}} ] := AffineSpan[point,0]
+				AffineSpan[point_?VectorQ, vector_?VectorQ] := AffineSpan[point, {vector}]
+				AffineSpan[point_?VectorQ, vectors_?MatrixQ] :=
+					Module[{
+							embeddingDimension,
+							spanningVectors,
+							affineDimension,
+							affineBasis,
+							nullSpaceBasis,
+							affineOrigin
+						},
+						embeddingDimension = EmbeddingDimension[point];
+						spanningVectors = VectorSpanningSet[vectors];
+						affineDimension = Length[spanningVectors];
+						affineOrigin = point;
+						affineBasis = spanningVectors // NOrthogonalize;
+						nullSpaceBasis = NullSpace[Prepend[affineBasis,OriginVector[embeddingDimension]]] // NOrthogonalize;
+						AffineSpan[
+							<|
+								"Dimension" -> affineDimension,
+								"EmbeddingDimension" -> embeddingDimension,
+								"Basis" -> affineBasis,
+								"NullSpace" -> nullSpaceBasis,
+								"Origin" -> affineOrigin
+							|>
+						]
+					]
+			(* AffineSpan | Attributes *)
+				AffineSpan[data_Association]["Dimension"|"dimension"|"Dim"|"dim"|"D"|"d"] := data["Dimension"]
+				AffineSpan[data_Association]["EmbeddingDimension"|"embdim"|"edim"|"EDim"|"ed"|"e"] := data["EmbeddingDimension"]
+				AffineSpan[data_Association]["Basis"|"basis"|"B"|"b"] := data["Basis"]
+				AffineSpan[data_Association]["NullSpace"|"nullspace"|"NullBasis"|"nullbasis"|"N"|"n"] := data["NullSpace"]
+				AffineSpan[data_Association]["Origin"|"origin"|"O"|"o"] := data["Origin"]
+			(* AffineSpan | Properties *)
+				AffineSpan[data_Association]["Codimension"|"Codim"|"codim"|"cdim"|"cd"|"c"] := Subtract[data["EmbeddingDimension"],data["Dimension"]]
+			(* ->> EmptySpace *)
+				EmptySpace[AffineSpan[data_Association]] := EmptySpace[data["EmbeddingDimension"]]
+				EmptySpace[VectorSpan[data_Association]] := EmptySpace[data["EmbeddingDimension"]]
+				VectorSpan[EmptySpace[data_Association]] := EmptySpace[data["EmbeddingDimension"]]
+				AffineSpan[EmptySpace[data_Association]] := EmptySpace[data["EmbeddingDimension"]]
+			(* ->> AffineSpan *)
+				AffineSpan[VectorSpan[data_Association]] := AffineSpan[Append[data,"Origin"->OriginVector[data["EmbeddingDimension"]]]]
+			(* ->> VectorSpan *)
+				VectorSpan[AffineSpan[data_Association]] := VectorSpan[Delete[data,"Origin"]]
+			(* ->> AffineSpace ->> Graphics(3D) *)
+				AffineSpan /: AffineSpace[AffineSpan[data_Association]] := AffineSpace[data["Origin"],data["Basis"]]
+				VectorSpan /: AffineSpace[VectorSpan[data_Association]] := AffineSpace[OriginVector[data["EmbeddingDimension"]],data["Basis"]]
+				EmptySpace /: AffineSpace[EmptySpace[data_Association]] := EmptyRegion[data["EmbeddingDimension"]]
+			(* AffineSpanIntersection *)
+				AffineSpanIntersection[a_,b_,c__] := AffineSpanIntersection[AffineSpanIntersection[a,b],c]
+				AffineSpanIntersection[___, EmptySpace[n_], ___] := EmptySpace[n]
+				AffineSpanIntersection[vec1_VectorSpan, vec2_VectorSpan] := AffineSpanIntersection[AffineSpan[vec1], AffineSpan[vec2]]
+				AffineSpanIntersection[vec_VectorSpan, aff_AffineSpan] := AffineSpanIntersection[aff, AffineSpan[vec]]
+				AffineSpanIntersection[aff_AffineSpan, vec_VectorSpan] := AffineSpanIntersection[aff, AffineSpan[vec]]
+				AffineSpanIntersection[aff1_AffineSpan, aff2_AffineSpan] :=
+					Module[{
+							embeddingDimension,
+							dimension1,
+							dimension2,
+							point1,
+							basis1,
+							point2,
+							basis2,
+							intersectionBasis,
+							liftedBasis1,
+							liftedBasis2,
+							liftedIntersectionBasis,
+							liftedIntersectionPoint,
+							intersectionPoint
+						},
+						If[Unequal[aff1["EmbeddingDimension"],aff2["EmbeddingDimension"]],
+							Message[VectorSpanIntersection::DimensionMismatch];
+							Return[AffineSpan[]];
+						];
+						embeddingDimension = aff1["EmbeddingDimension"];
+						dimension1 = aff1["Dimension"];
+						dimension2 = aff2["Dimension"];
+						point1 = aff1["Origin"];
+						basis1 = aff1["Basis"];
+						point2 = aff2["Origin"];
+						basis2 = aff2["Basis"];
+						zeroBasis = ConstantArray[0,{1,embeddingDimension}];
+						If[basis1 == {}, basis1 = zeroBasis;];
+						If[basis2 == {}, basis2 = zeroBasis;];
+						intersectionBasis = NOrthogonalize[NullSpace[Join[NullSpace[basis1],NullSpace[basis2],zeroBasis]]];
+						lisftedZeroBasis = ConstantArray[0,{1,Plus[embeddingDimension,1]}];
+						liftedBasis1 = ArrayFlatten[{{basis1,0},{{point1},1}}];
+						liftedBasis2 = ArrayFlatten[{{basis2,0},{{point2},1}}];
+						liftedIntersectionBasis = NullSpace[Join[NullSpace[liftedBasis1],NullSpace[liftedBasis2],lisftedZeroBasis]];
+						If[Or[liftedIntersectionBasis=={},AllNEqualToZero[Part[liftedIntersectionBasis,All,-1]]],
+							Return[EmptyRegion[embeddingDimension]];];
+						liftedIntersectionPoint = SelectFirst[liftedIntersectionBasis, Last/*Chop/*UnequalTo[0]];
+						liftedIntersectionPoint = Divide[liftedIntersectionPoint,Last[liftedIntersectionPoint]];
+						intersectionPoint = Most[liftedIntersectionPoint];
+						intersectionPoint = intersectionBasis . intersectionPoint;
+						Return[AffineSpan[intersectionPoint,intersectionBasis]];
+					]
+
+		(* Vector *)
+			(* Vector | Translate *)
+				VectorTranslate[{},vector_] := {}
+				VectorTranslate[points_,{}] := {}
+				VectorTranslate[points_?ArrayQ,vector_?VectorQ] := ArrayTranspose[Plus[ArrayTranspose[points],vector]]
+				VectorTranslate[points_?ListQ,vector_?VectorQ] := Map[Function[VectorTranslate[#,vector]],points]
+				VectorTranslate[points_?ListQ,vectors_?ListQ] := Map[Function[VectorTranslate[points,#]],vectors]
+				VectorTranslate[points_,value_?(Composition[Not,ListQ])] := Plus[points,value]
+				VectorTranslate[vectors_][points_] := VectorTranslate[points,vectors]
+
+			(* Vector | Centroid *)
+				VectorCentroid[point_?VectorQ] := point
+				VectorCentroid[points_?MatrixQ] := Mean[points]
+				VectorCentroid[points_List] := Map[VectorCentroid,points]
+
+			(* Vector | Recenter *)
+				VectorRecenter[point_?VectorQ] := point
+				VectorRecenter[points_?MatrixQ] := VectorTranslate[points,Minus[Mean[points]]]
+				VectorRecenter[points_List] := Map[VectorRecenter,points]
+
+			(* Vector | Dilate *)
+				VectorDilate[points_, scale_, pivot_] := VectorTranslate[Times[VectorTranslate[points,Minus[pivot]],scale],Plus[pivot]]
+				VectorDilate[points_?MatrixQ, scale_] := VectorDilate[points,scale,Mean[points]]
+				VectorDilate[points_List, scale_] := Map[Function[VectorDilate[#,scale]],points]
+				VectorDilate[scale_, pivot_?VectorQ][points_] := VectorDilate[points,scale,pivot]
+				VectorDilate[scale_][points_] := VectorDilate[points,scale]
+
+			(* Vector | Sort *)
+				VectorSort[vector_?VectorQ] := vector
+				VectorSort[vectors_?MatrixQ] := NumericalSort[vectors]
+				VectorSort[vectors_List] := NumericalSort[Map[VectorSort,vectors]]
+
+			(* Vector | BoundedQ *)
+				VectorBoundedQ[points_, normals_, bounds_] := Boolean[VectorBoundedQBoole[points,normals,bounds]]
+				VectorBoundedQ[normals_, bounds_][points_] := VectorBoundedQ[points,normals,bounds]
+
+			(* Vector | BoundedQ | Boole*)
+				VectorBoundedQBoole[points_, normal_?VectorQ, bound_] := BooleNNonPositive[Subtract[ArrayDot[points,normal],bound]]
+				VectorBoundedQBoole[points_, normals_?MatrixQ, bounds_] := 	BooleEqual[ArrayDot[BooleNNonPositive[VectorTranslate[ArrayDot[points,Transpose[normals]],-bounds]],DiagonalVector[Length[normals]]],Length[normals]]
+				VectorBoundedQBoole[normals_, bounds_][points_] := VectorBoundedQBoole[points,normals,bounds]
+
+			(* Vector | Match *)
+				VectorMatchQ[pointsA_,pointsB_] := NEqual[VectorSort[pointsA],VectorSort[pointsB]]
+
+			(* Vector | Cases *)
+				VectorCases[points_?MatrixQ, pattern_?MatrixQ] :=
+					Module[{
+							patternPoints,
+							patternVectors,
+							patternVectorIndex,
+							patternOffsetVector,
+							patternVector,
+							matchedPatternBasePoints
+						},
+						patternPoints = DeleteDuplicates[pattern];
+						patternBasePoint = First[patternPoints];
+						patternVectors = VectorTranslate[Rest[patternPoints],Minus[patternBasePoint]];
+						matchedPatternBasePoints = points;
+						Monitor[
+							Do[
+								patternVector = Part[patternVectors,patternVectorIndex];
+								matchedPatternBasePoints = Intersection[matchedPatternBasePoints,VectorTranslate[points,Minus[patternVector]]];
+							,{patternVectorIndex,Length[patternVectors]}];
+						,ProgressIndicator[patternVectorIndex,{1,Length[patternVectors]}]
+						,1
+						];
+						matchedPatternBasePoints = VectorTranslate[matchedPatternBasePoints,Minus[patternBasePoint]];
+						Return[matchedPatternBasePoints];
+					]
+
+			(* N | Vector | Cases *)
+				NVectorCases[points_?MatrixQ, pattern_?MatrixQ] :=
+					Module[{
+							pointsN,
+							patternPoints,
+							patternVectors,
+							patternVectorIndex,
+							patternOffsetVector,
+							patternVector,
+							matchedPatternBasePointsN,
+							matchedPatternBasePoints
+						},
+						pointsN = N[points];
+						patternPoints = NDeleteDuplicates[pattern];
+						patternBasePoint = First[patternPoints];
+						patternVectors = VectorTranslate[Rest[patternPoints],Minus[patternBasePoint]];
+						matchedPatternBasePointsN = NRound[pointsN];
+						Monitor[
+							Do[
+								patternVector = Part[patternVectors,patternVectorIndex];
+								matchedPatternBasePointsN = Intersection[matchedPatternBasePointsN,NRound[VectorTranslate[pointsN,Minus[patternVector]]]];
+							,{patternVectorIndex,Length[patternVectors]}];
+						,ProgressIndicator[patternVectorIndex,{1,Length[patternVectors]}]
+						,1
+						];
+						matchedPatternBasePoints = NIntersection[points,matchedPatternBasePointsN];
+						matchedPatternBasePoints = VectorTranslate[matchedPatternBasePoints,Minus[patternBasePoint]];
+						Return[matchedPatternBasePoints];
+					]
+			(* Vector | Shells *)
+				VectorShells[points_] := SortBy[Parts[points,GatherIndices[NRound[VectorNorm[N[points]]]]],Composition[Norm,N,First]]
+
+			(* Vector | Slice | Points *)
+				VectorSlicePoints[{},normal_,value_] := {}
+				VectorSlicePoints[points_,normal_,value_] := Pick[points, BooleNEqual[ArrayDot[N[points],N[normal]],N[value]], 1]
+				VectorSlicePoints[normal_,value_][points_] := VectorSlicePoints[points,normal,value]
+
+			(* Vector | Slice | Points | Maximal *)
+				VectorMaximalByNormal[points_,normal_] := Part[points,NMaximalIndices[Dot[N[points],normal]]]
+
+			(* Vector | Chop | Points *)
+				VectorChopPoints[{},normal_,value_] := {}
+				VectorChopPoints[points_?ArrayQ,normal_,value_] := Pick[points,NonPositive[Sign[Chop[Subtract[Dot[points,normal],value]]]]]
+				VectorChopPoints[points_,normal_,value_] := Map[Function[VectorChopPoints[#,normal,value]],points]
+				VectorChopPoints[normal_,value_][points_] := VectorChopPoints[points,normal,value]
+
+			(* Vector | Transform *)
+				VectorTransform[points_,matrix_] := ArrayDot[points,Transpose[matrix]]
+				VectorTransform[matrix_][points_] := VectorTransform[points,matrix]
+
+			(* Vector | Rotate *)
+				VectorRotate[points_,matrix_?MatrixQ] := VectorTransform[points,matrix]
+				VectorRotate[points_,theta_?NumericQ] := VectorTransform[points,RotationMatrix[theta,IdentityMatrix[{2,EmbeddingDimension[points]}]]]
+				VectorRotate[matrix_][points_] := VectorTransform[points,matrix]
+
+			(* Vector | Affine | Rotate *)
+				VectorAffineRotate[points_,transform_,pivot_] := VectorTranslate[VectorRotate[VectorTranslate[points,Minus[pivot]],transform],pivot]
+				VectorAffineRotate[transform_,pivot_][points_] := VectorAffineRotate[points,transform,pivot]
+
+			(* Vector | Projection *)
+				VectorProject[{},subspace_] := {}
+				VectorProject[points_,0] := ArrayDot[points,ConstantArray[{},EmbeddingDimension[points]]]
+				VectorProject[points_,dimension_Integer] := ArrayDot[points,IdentityMatrix[{EmbeddingDimension[points],dimension}]]
+				VectorProject[points_,{}] := ArrayDot[points,ConstantArray[{},EmbeddingDimension[points]]]
+				VectorProject[points_,vector_?VectorQ] := ArrayDot[points,vector]
+				VectorProject[points_,subspace_?MatrixQ] := ArrayDot[points,Transpose[subspace]]
+				VectorProject[subspace_][points_] := VectorProject[points,subspace]
+
+			(* Vector | Affine | Projection *)
+				VectorAffineProject[points_,subspace_,pivot_] := VectorProject[VectorTranslate[points,Minus[pivot]],subspace]
+				VectorAffineProject[subspace_,pivot_][points_] := VectorAffineProject[points,subspace,pivot]
+
+			(* Vector | Embed *)
+				VectorEmbed[{},subspace_] := {}
+				VectorEmbed[points_,dimension_Integer] := ArrayDot[points,IdentityMatrix[{EmbeddingDimension[points],dimension}]]
+				VectorEmbed[points_,basis_?MatrixQ] := ArrayDot[points,basis]
+				VectorEmbed[basis_][points_] := VectorEmbed[points,basis]
+
+			(* Vector | Affine *)
+				VectorAffineEmbed[points_,subspace_,pivot_] := VectorTranslate[VectorEmbed[points,subspace],pivot]
+				VectorAffineTransform[points_,xform_?SquareMatrixQ,pivot_] := VectorTranslate[VectorTransform[VectorTranslate[points,Minus[pivot]],xform],pivot]
+
+			(* Vector | MatrixPlot *)
+				VectorMatrixPlot[vectors_?MatrixQ] := MatrixPlot[Transpose[vectors], Rule[Frame,None], Rule[Mesh,All], Rule[MaxPlotPoints,Infinity], Rule[MeshStyle,{{AbsoluteThickness[1],Hue[0,0,0,.1]}}], Rule[PixelConstrained,{8,8}]]
+				VectorMatrixPlot[vector_?VectorQ] := VectorMatrixPlot[{vector}]
+				VectorMatrixPlot[matrices_?ListQ] := Map[VectorMatrixPlot,matrices]
+
+			(* Vector Distance *)
+				(* Vector | Distance | point *)
+					VectorDistance[points_,origin_?Vector] := VectorNorm[VectorTranslate[points,Minus[origin]]]
+				(* Vector | Distance | Line *)
+					VectorDistanceToLine[base_,axis_][points_] := VectorNorm[VectorProject[VectorTranslate[points,Minus[base]],Orthogonalize[NullSpace[{axis}]]]]
+
+			(* Path *)
+				(* Vector | Path | Edges *)
+					VectorPathEdges[path_?MatrixQ] := Partition[path,2,1]
+
+				(* Vector | Path | ParallelTransport *)
+					VectorPathParallelTransport[path_] :=
+						Module[{
+								dim,
+								rotations,
+								frames,
+								tangent,
+								tangentNew,
+								frame,
+								rotation
+							},
+							dim = EmbeddingDimension[path];
+							frame = IdentityMatrix[dim];
+							rotations = {};
+							frame = IdentityMatrix[dim];
+							frames = {};
+							tangent = First[frame];
+							Do[
+								tangentNew = VectorNormalize[path[[i+1]]-path[[i]]];
+								If[MatrixRank[{tangent,tangentNew}] == 2,
+									rotation = RotationMatrix[{tangent,tangentNew}];
+									,
+									If[Negative[Dot[tangent,tangentNew]],
+										rotation = ReflectionMatrix[tangentNew];
+										,
+										rotation = IdentityMatrix[dim];
+									];
+								];
+								tangent = tangentNew;
+								frame = Dot[frame,Transpose[rotation]];
+								AppendTo[frames,frame];
+								AppendTo[rotations,rotation];
+							,{i,Length[path]-1}
+							];
+							AppendTo[rotations,Last[rotations]];
+							AppendTo[frames,Last[frames]];
+							Return[frames];
+						]
+
+			(* Simplex *)
+				(* Simplex | Normal *)
+					SimplexNormal[{{x_}}] := {1}
+					SimplexNormal[simplex_] := Apply[Cross,VectorTranslate[Rest[simplex],Minus[First[simplex]]]]
+
+				(* Simplex | Measure *)
+					SimplexMeasure /: SimplexMeasure[Simplex[pointCoordinates_]] := Abs[SimplexMeasure[pointCoordinates]]
+					SimplexMeasure[simplexInput_?MatrixQ] :=
+						Module[{
+								simplexVertices,
+								embeddingDimension,
+								affineDimension,
+								simplexVectors,
+								measure
+							},
+							simplexVertices = simplexInput;
+							embeddingDimension = EmbeddingDimension[simplexVertices];
+							affineDimension = Subtract[Length[simplexVertices],1];
+							If[Greater[affineDimension,embeddingDimension],
+								Return[0];];
+							simplexVectors = VectorTranslate[Rest[simplexVertices],Minus[First[simplexVertices]]];
+							If[Less[affineDimension,embeddingDimension],
+								simplexVectors = VectorProject[simplexVectors,Orthogonalize[simplexVectors]];];
+							measure = Divide[Det[simplexVectors],Factorial[affineDimension]];
+							measure = Abs[measure];
+							Return[measure];
+						]
+
+				(* Simplex | OrientedFacets *)
+					SimplexOrientedFacets[simplexVertices_] :=
+						If[LessEqual[Length[simplexVertices],2],
+							Subsets[simplexVertices,{Length[simplexVertices]-1}]
+							,
+							Module[{simplexVertexIndices,simplexVertexCount,simplexFacetCount,orientedFacetVertexIndices,orientedFacetVertices},
+								simplexVertexIndices = ListIndices[simplexVertices];
+								simplexVertexCount = Length[simplexVertices];
+								simplexFacetCount = simplexVertexCount;
+								orientedFacetVertexIndices = ConstantArray[Most[simplexVertexIndices],simplexFacetCount];
+								orientedFacetVertexIndices[[1,{1,2}]] = orientedFacetVertexIndices[[1,{2,1}]];
+								Do[
+									orientedFacetVertexIndices[[index+1,index]] = simplexVertexCount;
+								,{index,1,simplexVertexCount-1}];
+								orientedFacetVertices = Parts[simplexVertices,orientedFacetVertexIndices];
+								Return[orientedFacetVertices];
+							]
+						]
+
+				(* Simplex | OrientedQ *)
+					SimplexOrientedQ[simplex_?SquareMatrixQ] := Positive[Det[VectorTranslate[Rest[simplex],N[Minus[First[simplex]]]]]]
+					SimplexRegularQ[ verticesInput_?MatrixQ ] :=
+						Module[{
+								dimension,
+								vertexCount,
+								edgeCount,
+								vertices,
+								simplexRegularQ,
+								edgeLengthFunction,
+								edgeLengthTarget,
+								edgeIndex,
+								edgeVertices,
+								edgeLength
+							},
+							dimension = EmbeddingDimension[verticesInput];
+							vertexCount = Length[verticesInput];
+							edgeCount = Binomial[vertexCount,2];
+							If[Equal[vertexCount,1], Return[True];];
+							If[Greater[vertexCount,dimension], Return[False];];
+							vertices = N[verticesInput];
+							edgeLengthFunction = RightComposition[Differences,First,Norm];
+							edgeLengthTarget = First[Subsets[vertices,{2},{1}]] // edgeLengthFunction;
+							simplexRegularQ = True;
+							Do[
+								edgeVertices = First[Subsets[vertices,{2},{edgeIndex}]];
+								edgeLength = edgeVertices // edgeLengthFunction;
+								If[Not[NEqual[edgeLength,edgeLengthTarget]],
+									simplexRegularQ = False;
+									Break[];
+								];
+							,{edgeIndex,edgeCount}];
+							Return[simplexRegularQ];
+						]
+
+			(* Polygon *)
+				(* Polygon | Basis *)
+					PolygonBasis[points_] := Orthogonalize[VectorSpanningSet[VectorTranslate[Rest[N[points]],Minus[First[N[points]]]],2]]
+
+				(* Polygon | VertexOrdering *)
+					PolygonVertexOrdering[pointsInput_] :=
+						Module[{
+								points,
+								vectors,
+								plane,
+								args,
+								norms,
+								ordering
+							},
+							points = N[pointsInput];
+							If[LessEqual[Length[points],3], Return[ListIndices[points]];];
+							vectors = VectorRecenter[points];
+							plane = Orthogonalize[VectorSpanningSet[vectors,2]];
+							points = VectorProject[points,plane];
+							ordering = Ordering[VectorArg[VectorProject[vectors,plane]]];
+							Return[ordering];
+						]
+
+				(* Polygon | VertexSort *)
+					PolygonVertexSort[polygon_] := Part[polygon,PolygonVertexOrdering[polygon]]
+
+				(* Polygon | Attributes *)
+					PolygonEdges[polygon_] := Transpose[{polygon,RotateLeft[polygon]}]
+					PolygonMeasure[polygon_] := PolygonArea[polygon]
+					PolygonArea[polygonInput_] :=
+						Module[{
+								polygon,
+								basis,
+								origin,
+								polygonArea
+							},
+							polygon = VectorRecetner[N[polygonInput]];
+							basis = Orthogonalize[VectorSpanningSet[VectorRecetner[N[polygon]],2]];
+							polygon = polygon // VectorProject[basis];
+							polygon = Part[polygon,VectorArg[polygon]];
+							origin = OriginVector[EmbeddingDimension[polygon]];
+							polygonArea = polygon // VectorPathEdges // Map[Prepend[origin]] // Map[SimplexMeasure] // Total;
+							Return[polygonArea];
+						]
+
+			NOrthogonalMatrixQ[matrix_?MatrixQ] := OrthogonalMatrixQ[N[matrix]];
+
+			PrincipalVectorAngles[basis1_?(N /* OrthogonalMatrixQ), basis2_?(N /* OrthogonalMatrixQ)] := Re@ArcCos[SingularValueList[Dot[basis1,Transpose[basis2]]]]
+			PrincipalVectorAngles[basis1_?MatrixQ, basis2_?MatrixQ] := Re@ArcCos[SingularValueList[Dot[Orthogonalize[basis1],Transpose[Orthogonalize[basis2]]]]]
+			PrincipalVectorAngles[a:_VectorSpan|_AffineSpan, b:_VectorSpan| q_AffineSpan] := PrincipalVectorAngles[a["Basis"],b["Basis"]]
+
+
+(* ::Subsection:: *)
+(*End*)
 
 
 	End[];
