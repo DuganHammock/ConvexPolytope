@@ -37,7 +37,7 @@ Cell["", "FileManagerTopSpacer",
  CellGroupingRules->{"SectionGrouping", 99},
  TaggingRules->{},
  CellTags->{"FileManagerCell", "FileManager-PacletFiles"},
- CellID->64219963,ExpressionUUID->"8dadd458-ff73-4445-8f50-e77258c9ff26"],
+ CellID->64219963,ExpressionUUID->"d107f543-8a9d-44ee-81f4-37c9d4b51cea"],
 
 Cell[TextData[Cell[BoxData[
  InterpretationBox[
@@ -60,7 +60,7 @@ Cell[TextData[Cell[BoxData[
     NotebookDirectory[], "Documentation"}],
   BoxID -> "FileTreePath",
   BaseStyle->{
-   "Text"}]],ExpressionUUID->"86841499-d382-46e3-bf0f-fd60e20da35b"]], \
+   "Text"}]],ExpressionUUID->"fb59065e-bfba-40c2-ac21-4187d61ded23"]], \
 "FileManagerDirectory",
  CellMargins->{{Inherited, Inherited}, {Inherited, Inherited}},
  CellGroupingRules->{"SectionGrouping", 100},
@@ -71,7 +71,7 @@ Cell[TextData[Cell[BoxData[
       TemplateBox[{}, "FileManagerDocumentationIconTemplate"]], Background -> 
      None], Inherited}, {Inherited, Inherited}},
  CellTags->{"FileManagerCell", "FileManager-PacletFiles"},
- CellID->64514691,ExpressionUUID->"9c75f2b3-b279-40f7-87b1-d273924eb777"],
+ CellID->64514691,ExpressionUUID->"febabd04-90e6-43d4-80c2-113cc54339ac"],
 
 Cell[CellGroupData[{
 
@@ -96,7 +96,7 @@ Cell[TextData[Cell[BoxData[
     NotebookDirectory[], "Kernel"}],
   BoxID -> "FileTreePath",
   BaseStyle->{
-   "Text"}]],ExpressionUUID->"31d6752b-dbc3-41bc-ba30-c9a1e0341877"]], \
+   "Text"}]],ExpressionUUID->"4a0c210f-4cee-48a1-b973-5909bd5009fb"]], \
 "FileManagerDirectory",
  CellMargins->{{Inherited, Inherited}, {Inherited, Inherited}},
  CellGroupingRules->{"SectionGrouping", 100},
@@ -107,7 +107,7 @@ Cell[TextData[Cell[BoxData[
       TemplateBox[{}, "FileManagerKernelIconTemplate"]], Background -> None], 
     Inherited}, {Inherited, Inherited}},
  CellTags->{"FileManagerCell", "FileManager-PacletFiles"},
- CellID->360176238,ExpressionUUID->"66173fba-7c7a-4dea-b306-47a99d53a352"],
+ CellID->360176238,ExpressionUUID->"be530ea8-d141-4fc5-beff-437435937476"],
 
 Cell[BoxData[
  InterpretationBox[
@@ -131,7 +131,7 @@ Cell[BoxData[
       TemplateBox[{}, "FileManagerWLIconTemplate"]], Background -> None], 
     Inherited}, {Inherited, Inherited}},
  CellTags->{"FileManagerCell", "FileManager-PacletFiles"},
- CellID->229536172,ExpressionUUID->"943ccf25-f1c3-4906-a232-2e874b235751"]
+ CellID->229536172,ExpressionUUID->"689d6330-27c0-4bcb-8e08-0a5fd52c2fee"]
 }, Open  ]],
 
 Cell[BoxData[
@@ -156,7 +156,31 @@ Cell[BoxData[
       TemplateBox[{}, "FileManagerPacletInfoIconTemplate"]], Background -> 
      None], Inherited}, {Inherited, Inherited}},
  CellTags->{"FileManagerCell", "FileManager-PacletFiles"},
- CellID->51089732,ExpressionUUID->"2da96d39-def4-4318-bfa1-7c9830f8f98b"],
+ CellID->51089732,ExpressionUUID->"0035e09e-8953-424b-9f3d-074af525ddca"],
+
+Cell[BoxData[
+ InterpretationBox[
+  TagBox[
+   TemplateBox[{"\"README.md\"", 
+     FileNameJoin[{
+       NotebookDirectory[], "README.md"}]},
+    "FileManagerFileOpenerTemplate"],
+   Annotation[#, 
+    DefinitionNotebookClient`TemplateCells`PackagePrivate`fileDepth[0]]& ],
+  FileNameJoin[{
+    NotebookDirectory[], "README.md"}],
+  BoxID -> "FileTreePath",
+  BaseStyle->{"Text"}]], "FileManagerFile",
+ CellMargins->{{Inherited, Inherited}, {Inherited, Inherited}},
+ CellGroupingRules->{"SectionGrouping", 100},
+ TaggingRules->{},
+ CellFrameLabels->{{
+    Cell[
+     BoxData[
+      TemplateBox[{}, "FileManagerTXTIconTemplate"]], Background -> None], 
+    Inherited}, {Inherited, Inherited}},
+ CellTags->{"FileManagerCell", "FileManager-PacletFiles"},
+ CellID->229212864,ExpressionUUID->"8e0159a3-ca52-456a-9ab3-bd8bcced9849"],
 
 Cell[BoxData[
  InterpretationBox[
@@ -180,13 +204,13 @@ Cell[BoxData[
       TemplateBox[{}, "FileManagerNBIconTemplate"]], Background -> None], 
     Inherited}, {Inherited, Inherited}},
  CellTags->{"FileManagerCell", "FileManager-PacletFiles"},
- CellID->657332296,ExpressionUUID->"70a5af47-4d81-4246-bb72-f0a90d4c821a"],
+ CellID->657332296,ExpressionUUID->"0605105a-5a2d-44e2-b3a8-6d0f5697a473"],
 
 Cell["", "FileManagerBottomSpacer",
  CellGroupingRules->{"SectionGrouping", 100},
  TaggingRules->{},
  CellTags->{"FileManagerCell", "FileManager-PacletFiles"},
- CellID->660434934,ExpressionUUID->"60fe1c71-06fd-45c8-9734-87c5f651443d"]
+ CellID->660434934,ExpressionUUID->"6cc78695-04ed-49b3-af18-e2cef9706124"]
 }, Open  ]]
 }, Open  ]],
 
@@ -1571,9 +1595,9 @@ Cell[BoxData[
     0.794654472291766}, {0.491123473188423, -0.35682208977308993`, 
     0.794654472291766}, {0.27639320225002106`, -0.8506508083520401, 
     0.44721359549995787`}}], 
-   Polygon3DBox[{{-0.1875924740850799, -0.5773502691896258, 
-    0.794654472291766}, {0.49112347318842303`, -0.35682208977308993`, 
-    0.794654472291766}, {0., 0., 1.}}], 
+   Polygon3DBox[{{-0.1875924740850799, -0.5773502691896258, 0.794654472291766}
+    , {0.49112347318842303`, -0.35682208977308993`, 0.794654472291766}, {0., 
+    0., 1.}}], 
    Polygon3DBox[{{-0.1875924740850799, -0.5773502691896258, 
     0.794654472291766}, {-0.6070619982066863, 0., 
     0.794654472291766}, {-0.723606797749979, -0.5257311121191336, 
@@ -8885,16 +8909,9 @@ GitHub), you can provide the URL here.", "MoreInfoText"], Background ->
   "Source Control Repository", "SourceControlURL", "TemplateCellGroup"},
  CellID->221376991,ExpressionUUID->"0df4310a-fd6e-4130-8244-547ef6437857"],
 
-Cell["https://github.com/UserName/MyPaclet", "Text",
+Cell["https://github.com/DuganHammock/ConvexPolytope", "Text",
  TaggingRules->{},
- CellEventActions->{Inherited, {"KeyDown", "\t"} :> Replace[SelectionMove[
-       SelectedNotebook[], After, Cell]; NotebookFind[
-       SelectedNotebook[], "TabNext", Next, CellTags, AutoScroll -> True, 
-       WrapAround -> True], Blank[NotebookSelection] :> SelectionMove[
-       SelectedNotebook[], All, CellContents, AutoScroll -> True]], 
-   PassEventsDown -> False, PassEventsUp -> False},
- CellTags->{"DefaultContent", "TabNext"},
- CellID->75689085,ExpressionUUID->"e2a06513-caa6-4fb5-ae89-a35fae708cbe"]
+ CellID->362610270,ExpressionUUID->"e707925a-f408-47f2-a01a-922ca56581a1"]
 }, Open  ]],
 
 Cell[CellGroupData[{
@@ -8968,7 +8985,6 @@ Cell[BoxData[
             "MIT"}], "\" \"", 
            StyleBox[
             TemplateBox[{"\"MIT License\"", "\"\[ThinSpace]\"", 
-              
               TemplateBox[{
                "\"\[RightGuillemet]\"", 
                 "https://resources.wolframcloud.com/PacletRepository/licenses/\
@@ -10756,7 +10772,7 @@ Cell["This paclet is under development.", "Text",
 }, Open  ]]
 },
 WindowSize->{1063.5, 1048.5},
-WindowMargins->{{Automatic, -1834.5}, {Automatic, 183.75}},
+WindowMargins->{{Automatic, 240}, {243, Automatic}},
 WindowTitle->"ConvexPolytope | Definition Notebook",
 DockedCells->{
   Cell[
@@ -10817,22 +10833,22 @@ Fu6DuJJG2H9mK2QZ3X1Y8rjKVdsLU11Qbnfn/Mae/TiO1RZHs2bny+6Vwq5Sfi8TnHKi+1+K4NOh"]\
   "PacletBuildData" -> {
    "LastBuiltArchive" -> 
     "D:\\workspace\\Wolfram\\paclets\\ConvexPolytope\\build\\DuganHammock__\
-ConvexPolytope-1.0.1.paclet", "FileHashes" -> 
+ConvexPolytope-1.0.2.paclet", "FileHashes" -> 
     ByteArray[{56, 67, 58, 120, 156, 115, 100, 215, 13, 86, 115, 201, 79, 46, 
       205, 77, 205, 43, 73, 44, 201, 204, 207, 211, 119, 205, 75, 207, 201, 
       44, 206, 208, 247, 204, 75, 73, 173, 208, 47, 78, 77, 7, 73, 21, 199, 
       27, 58, 50, 233, 6, 179, 5, 231, 151, 22, 37, 167, 22, 179, 248, 229, 
-      231, 165, 2, 185, 33, 137, 69, 233, 169, 37, 62, 179, 203, 188, 111, 
-      106, 7, 92, 226, 210, 13, 214, 32, 198, 44, 189, 244, 212, 60, 60, 166, 
-      177, 126, 152, 241, 104, 129, 228, 179, 18, 221, 96, 109, 236, 166, 5, 
-      23, 164, 230, 228, 144, 224, 60, 13, 185, 206, 47, 251, 243, 4, 163, 
-      116, 131, 117, 137, 54, 144, 104, 55, 74, 120, 167, 22, 229, 165, 230, 
-      232, 59, 231, 231, 149, 165, 86, 4, 228, 231, 84, 150, 228, 23, 164, 
-      234, 149, 231, 32, 233, 246, 169, 43, 157, 177, 140, 169, 193, 94, 28, 
-      97, 0, 66, 132, 55, 32, 49, 57, 39, 181, 196, 51, 47, 45, 31, 77, 215, 
-      220, 21, 255, 28, 159, 172, 126, 229, 141, 208, 133, 16, 17, 132, 232, 
-      242, 77, 204, 203, 76, 75, 45, 46, 65, 213, 137, 238, 218, 117, 186, 
-      174, 25, 209, 211, 207, 50, 2, 0, 128, 65, 181, 141}]}},
+      231, 165, 2, 185, 33, 137, 69, 233, 169, 37, 62, 42, 111, 191, 241, 206,
+       123, 55, 217, 81, 55, 88, 131, 24, 179, 244, 210, 83, 243, 240, 152, 
+      198, 250, 97, 198, 163, 5, 146, 207, 74, 116, 131, 181, 177, 155, 22, 
+      92, 144, 154, 147, 67, 130, 243, 180, 34, 110, 191, 187, 168, 57, 85, 
+      89, 55, 88, 151, 104, 3, 137, 118, 163, 132, 119, 106, 81, 94, 106, 142,
+       190, 115, 126, 94, 89, 106, 69, 64, 126, 78, 101, 73, 126, 65, 170, 94,
+       121, 14, 146, 110, 159, 94, 27, 237, 103, 150, 233, 114, 246, 8, 3, 16,
+       34, 188, 1, 137, 201, 57, 169, 37, 158, 121, 105, 249, 104, 186, 46, 
+      137, 20, 199, 252, 153, 48, 49, 22, 161, 11, 33, 34, 8, 209, 229, 155, 
+      152, 151, 153, 150, 90, 92, 130, 170, 19, 221, 181, 219, 255, 170, 168, 
+      25, 188, 156, 34, 15, 0, 220, 168, 181, 3}]}},
 CreateCellID->True,
 DynamicEvaluationTimeout->60,
 Magnification:>1. Inherited,

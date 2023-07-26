@@ -6,7 +6,7 @@ PacletObject[
     "Description" -> "Computes convex polytopes in n-dimensions",
     "Creator" -> "Dugan Hammock",
     "Version" -> "1.0.2",
-    "WolframVersion" -> "11.0+",
+    "WolframVersion" -> "11.2+",
     "PublisherID" -> "DuganHammock",
     "License" -> "MIT",
     "PrimaryContext" -> "DuganHammock`ConvexPolytope`",
